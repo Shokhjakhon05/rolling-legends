@@ -1,0 +1,179 @@
+name: Build - tests and Android export
+
+# Started by hand: `gh workflow run build.yml -f release=false`.
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Also build the signed release App Bundle (needs the signing secrets)'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: '4.6.3'
+  GODOT_TEMPLATES: '4.6.3.stable'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /opt/hostedtoolcache/CodeQL /usr/local/.ghcup /usr/share/swift
+          df -h /
+
+      - name: Cache Godot and its Android export template
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-android-v1
+
+      # The official template archive holds every platform (1.2 GB); only the Android parts
+      # are kept, so the cache stays small.
+      - name: Download Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot ~/.local/share/godot/export_templates/${GODOT_TEMPLATES}
+          curl -sSL --retry 3 -o /tmp/godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          curl -sSL --retry 3 -o /tmp/templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q /tmp/templates.tpz 'templates/android*' 'templates/version.txt' -d /tmp/tpl
+          mv /tmp/tpl/templates/* ~/.local/share/godot/export_templates/${GODOT_TEMPLATES}/
+          rm -rf /tmp/godot.zip /tmp/templates.tpz /tmp/tpl
+          ls -la ~/.local/share/godot/export_templates/${GODOT_TEMPLATES}/
+
+      - name: Godot on PATH
+        run: |
+          chmod +x ~/godot/godot
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+          ~/godot/godot --headless --version
+
+      - name: AdMob plugin
+        run: ./tool/fetch_admob.sh
+
+      - name: Import the project
+        run: |
+          godot --headless --import 2>&1 | tee import.log
+          if grep -E "SCRIPT ERROR|Parse Error" import.log; then echo "::error::script errors on import"; exit 1; fi
+
+      - name: Tests (rules, saves, every level played by a bot)
+        run: godot --headless -s tests/run_tests.gd
+
+      - name: Android build template, editor settings, debug key
+        run: |
+          set -euo pipefail
+          mkdir -p android/build
+          unzip -q ~/.local/share/godot/export_templates/${GODOT_TEMPLATES}/android_source.zip -d android/build
+          touch android/build/.gdignore
+          echo "${GODOT_TEMPLATES}" > android/.build_version
+          keytool -genkeypair -keystore "$HOME/debug.keystore" -storepass android -keypass android -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" >/dev/null 2>&1
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.6.tres <<SETTINGS
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "${ANDROID_HOME}"
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          export/android/debug_keystore = "${HOME}/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          SETTINGS
+          sed -i 's/^          //' ~/.config/godot/editor_settings-4.6.tres
+          mkdir -p ~/.gradle
+          {
+            echo 'org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=1G'
+            echo 'org.gradle.daemon=false'
+          } > ~/.gradle/gradle.properties
+
+      # Real ad ids never live in the repository: a release build takes them from secrets.
+      # Without them the build keeps Google's public test ids.
+      - name: Version and ad ids
+        env:
+          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+          REWARDED_AD_UNIT_ID: ${{ secrets.REWARDED_AD_UNIT_ID }}
+          INTERSTITIAL_AD_UNIT_ID: ${{ secrets.INTERSTITIAL_AD_UNIT_ID }}
+        run: |
+          set -euo pipefail
+          VERSION=$(grep '^config/version=' project.godot | cut -d'"' -f2)
+          echo "VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
+          sed -i "s/^version\/code=.*/version\/code=${{ github.run_number }}/; s/^version\/name=.*/version\/name=\"$VERSION\"/" export_presets.cfg
+          if [ "${{ inputs.release }}" = "true" ] && [ -n "$ADMOB_APP_ID" ] && [ -n "$REWARDED_AD_UNIT_ID" ] && [ -n "$INTERSTITIAL_AD_UNIT_ID" ]; then
+            printf '\n[admob]\n\ngeneral/android/app_id="%s"\n\n[rolling_legends]\n\nads/rewarded="%s"\nads/interstitial="%s"\n' \
+              "$ADMOB_APP_ID" "$REWARDED_AD_UNIT_ID" "$INTERSTITIAL_AD_UNIT_ID" >> project.godot
+            echo "ADS=real" >> "$GITHUB_ENV"
+          else
+            echo "ADS=test" >> "$GITHUB_ENV"
+            echo "::notice::Built with Google's test ad ids."
+          fi
+
+      - name: Export debug APK
+        run: |
+          mkdir -p build
+          godot --headless --export-debug "Android APK" build/rolling-legends-debug.apk 2>&1 | tee export-debug.log
+          test -s build/rolling-legends-debug.apk
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rolling-legends-debug-apk
+          path: build/rolling-legends-debug.apk
+          retention-days: 7
+
+      - name: Export signed release App Bundle and APK
+        if: ${{ inputs.release }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEY_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::No signing secrets"; exit 1; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/upload-keystore.jks"
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$HOME/upload-keystore.jks"
+          godot --headless --export-release "Android AAB" build/rolling-legends.aab 2>&1 | tee export-release.log
+          test -s build/rolling-legends.aab
+          godot --headless --export-release "Android APK" build/rolling-legends.apk 2>&1 | tee -a export-release.log
+          test -s build/rolling-legends.apk
+          echo "Built ${VERSION_NAME} (${{ github.run_number }}) with ${ADS} ad ids"
+
+      - name: Upload release builds
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rolling-legends-release
+          path: |
+            build/rolling-legends.aab
+            build/rolling-legends.apk
+          retention-days: 14
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: |
+            *.log
+          retention-days: 7
