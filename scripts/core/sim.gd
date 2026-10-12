@@ -25,6 +25,9 @@ var checkpoint := -1                # index of the last checkpoint reached
 var falls := 0
 var hits := 0
 var _last_hit := -9.0
+var _jump_wanted := 0.0             # seconds left in which a pressed jump may still happen
+var _since_ground := 0.0
+var jumps := 0
 var fallen := PackedByteArray()     # per cell: 1 = dropped away
 var behind_row := 0                 # rows before this one have collapsed
 var events: Array[Dictionary] = []  # drained by whoever shows or tests the run
@@ -45,8 +48,12 @@ func solid(row: int, col: int) -> bool:
 func solid_at(ps: float, pd: float) -> bool:
 	return solid(int(floor(ps)), Track.col_of(pd))
 
-func step(steer: float) -> void:
-	if state == State.LOST or state == State.WON:
+## One fixed step. [steer] is -1..1; [jump] is true on the step the player presses jump.
+func step(steer: float, jump: bool = false) -> void:
+	if state == State.LOST:
+		return
+	if state == State.WON:
+		_coast()
 		return
 	var dt := B.STEP
 	steer = clampf(steer, -1.0, 1.0)
@@ -75,19 +82,30 @@ func step(steer: float) -> void:
 	if grounded:
 		vd += track.curvature_at(s) * vs * vs * B.CENTRIFUGAL * dt
 
-	var was_row := int(floor(s))
 	s += vs * dt
 	d += vd * dt
 
+	# Jumping is the player's: a press is remembered for a moment so that one made just before
+	# landing, or just after rolling off an edge, still counts.
+	if jump:
+		_jump_wanted = B.JUMP_BUFFER
+	else:
+		_jump_wanted = maxf(_jump_wanted - dt, 0.0)
 	if grounded:
-		var out: float = track.launch[clampi(was_row, 0, track.rows - 1)]
-		if out > 0.0 and int(floor(s)) > was_row:
-			grounded = false
-			vh = out
-			events.append({"t": "launch"})
-		elif not solid_at(s, d):
+		_since_ground = 0.0
+		if not solid_at(s, d):
 			grounded = false
 			vh = 0.0
+	else:
+		_since_ground += dt
+	if _jump_wanted > 0.0 and vh <= 0.0 and h > -0.2 and (grounded or _since_ground <= B.COYOTE):
+		grounded = false
+		vh = B.JUMP_SPEED
+		h = maxf(h, 0.0)
+		_jump_wanted = 0.0
+		_since_ground = 9.0
+		jumps += 1
+		events.append({"t": "launch"})
 	if not grounded:
 		var before := h
 		vh -= B.GRAVITY * dt
@@ -106,16 +124,17 @@ func step(steer: float) -> void:
 	_obstacles(dt)
 	_pickups()
 	_road_decay()
-	if s >= track.finish_s and grounded:
+	if s >= track.finish_s and solid_at(s, d):
 		state = State.WON
 		events.append({"t": "win"})
 
 func _obstacles(_dt: float) -> void:
-	if h > B.OBSTACLE_HEIGHT:
+	if h > B.TALL_HEIGHT:
 		return
 	var r := B.BALL_RADIUS
-	for b in track.barriers:
-		_hit_box(b["s0"], b["s1"], b["d0"], b["d1"], r)
+	if h <= B.BARRIER_HEIGHT:
+		for b in track.barriers:
+			_hit_box(b["s0"], b["s1"], b["d0"], b["d1"], r)
 	for g in track.gates:
 		var open: float = Track.gate_open(g, time)
 		if open >= 0.999:
@@ -167,6 +186,19 @@ func _hit_box(s0: float, s1: float, d0: float, d1: float, r: float) -> void:
 	else:
 		if dd * vd < 0.0:
 			vd = -vd * B.HIT_SIDE_BOUNCE
+
+## After the finish line the ball rolls to a stop on the pad.
+func _coast() -> void:
+	var dt := B.STEP
+	vs = move_toward(vs, 0.0, B.BRAKE * dt)
+	vd = move_toward(vd, 0.0, B.BRAKE * dt)
+	s = minf(s + vs * dt, float(track.rows) - 1.2)
+	d += vd * dt
+	if h > 0.0 or vh > 0.0:
+		vh -= B.GRAVITY * dt
+		h = maxf(h + vh * dt, 0.0)
+		if h == 0.0:
+			vh = 0.0
 
 func _hit() -> void:
 	# One knock is one hit, however many steps the bodies stay in touch.

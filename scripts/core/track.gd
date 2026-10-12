@@ -14,7 +14,7 @@ var pos := PackedVector3Array()         # centre of each row
 var yaw := PackedFloat32Array()         # heading of each row, radians, + = left
 var pitch := PackedFloat32Array()       # slope of each row, radians, + = uphill
 var curvature := PackedFloat32Array()   # d(yaw)/ds
-var launch := PackedFloat32Array()      # upward speed given to a ball leaving this row, 0 = none
+var launch := PackedFloat32Array()      # > 0 on the last row before a gap: the take-off strip
 var crystals: Array[Dictionary] = []    # {s, d, h}
 var checkpoints: PackedFloat32Array = []
 var barriers: Array[Dictionary] = []    # {s0, s1, d0, d1}
@@ -201,8 +201,7 @@ func _add_item(item: Dictionary, start: int, n: int) -> void:
 		var other:
 			problems.append("unknown item '%s'" % other)
 
-## A road that ends at a gap throws the ball: exactly far enough at cruising speed, with a
-## little to spare.
+## Marks the last row before every gap, so the view can paint a take-off strip there.
 func _set_launches() -> void:
 	var r := 1
 	while r < rows:

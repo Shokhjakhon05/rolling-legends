@@ -54,7 +54,23 @@ func test_core() -> void:
 	t = make([{"t": "straight", "len": 20}, {"t": "gap", "len": 4}, {"t": "straight", "len": 20}])
 	sim = Sim.new(t)
 	run(sim, 20.0)
-	check(sim.state == Sim.State.WON, "a gap is jumped at cruising speed")
+	check(sim.state == Sim.State.LOST, "a gap is not crossed without jumping")
+	var jumper: RefCounted = Bot.play(t, 0.0)
+	check(jumper.state == Sim.State.WON and jumper.jumps == 1, "one well-timed jump crosses it")
+	sim = Sim.new(t)
+	for i in 10:
+		sim.step(0.0)
+	sim.step(0.0, true)
+	check(not sim.grounded and sim.vh > 0.0, "jump leaves the ground at once")
+	for i in 5:
+		sim.step(0.0, true)
+	check(sim.jumps == 1, "no second jump in the air")
+
+	t = make([{"t": "straight", "len": 30}])
+	sim = Sim.new(t)
+	run(sim, 30.0)
+	check(sim.state == Sim.State.WON and is_zero_approx(sim.vs), "the ball stops after the finish line")
+	check(sim.s < t.rows, "...and stays on the finish pad")
 
 	t = make([{"t": "straight", "len": 30, "items": [{"t": "barrier", "s": 15, "d": 0, "w": 7}]}])
 	sim = Sim.new(t)

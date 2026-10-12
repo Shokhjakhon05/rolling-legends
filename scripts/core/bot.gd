@@ -5,6 +5,13 @@ extends RefCounted
 const B := preload("res://scripts/core/balance.gd")
 const Track := preload("res://scripts/core/track.gd")
 
+## True when the bot wants to jump this step: the road under its lane ends just ahead.
+static func jump(sim: RefCounted) -> bool:
+	if not sim.grounded:
+		return false
+	var reach: float = maxf(sim.vs, 4.0) * 0.12
+	return not sim.solid_at(sim.s + reach, sim.d) and sim.track.row_empty(int(floor(sim.s + reach)))
+
 ## Returns the steer value (-1..1) for this step. [greed] > 0 makes it go for crystals.
 static func steer(sim: RefCounted, greed: float = 1.0) -> float:
 	var t: RefCounted = sim.track
@@ -60,7 +67,7 @@ static func steer(sim: RefCounted, greed: float = 1.0) -> float:
 	var want: float = Track.d_of(best_col) - sim.d
 	# Lean against the bend before it pushes the ball out.
 	want -= t.curvature_at(sim.s + 2.0) * sim.vs * sim.vs * 0.035
-	return clampf(want * 1.6 - sim.vd * 0.12, -1.0, 1.0)
+	return clampf(want * 0.9 - sim.vd * 0.06, -1.0, 1.0)
 
 ## Plays a whole level. Returns the finished run (state WON, or LOST after too many falls).
 static func play(track: RefCounted, greed: float = 1.0, max_falls: int = 0, limit_s: float = 240.0) -> RefCounted:
@@ -68,7 +75,7 @@ static func play(track: RefCounted, greed: float = 1.0, max_falls: int = 0, limi
 	var sim: RefCounted = Sim.new(track)
 	var steps := int(limit_s / B.STEP)
 	for i in steps:
-		sim.step(steer(sim, greed))
+		sim.step(steer(sim, greed), jump(sim))
 		sim.events.clear()
 		if sim.state == 3:  # WON
 			break

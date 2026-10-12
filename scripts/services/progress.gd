@@ -22,6 +22,7 @@ var crystals := 0          # wallet
 var owned: Array = ["classic"]
 var skin := "classic"
 var sound := true
+var music := true
 var vibration := true
 var sensitivity := 1.0
 var language := ""
@@ -52,6 +53,7 @@ func load_save() -> void:
 	if not owned.has(skin):
 		skin = "classic"
 	sound = bool(data.get("sound", true))
+	music = bool(data.get("music", true))
 	vibration = bool(data.get("vibration", true))
 	sensitivity = clampf(float(data.get("sensitivity", 1.0)), 0.5, 2.0)
 	language = str(data.get("language", ""))
@@ -67,7 +69,7 @@ func save() -> void:
 		return
 	var data := {
 		"version": VERSION, "stars": stars, "best_time": best_time, "crystals": crystals,
-		"owned": owned, "skin": skin, "sound": sound, "vibration": vibration,
+		"owned": owned, "skin": skin, "sound": sound, "music": music, "vibration": vibration,
 		"sensitivity": sensitivity, "language": language, "levels_done": levels_done,
 		"tutorial_done": tutorial_done,
 	}

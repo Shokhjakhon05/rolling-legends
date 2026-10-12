@@ -54,6 +54,7 @@ func _start_game(level: int, attract: bool) -> void:
 	_game.attract = attract
 	add_child(_game)
 	move_child(_game, 0)
+	Sound.set_music(LevelDb.world_index(level - 1))
 	if not attract:
 		_game.leave.connect(_on_leave)
 
@@ -267,6 +268,13 @@ func show_settings() -> void:
 		Progress.save()
 		show_settings())
 	pv.add_child(sound)
+	var music := Kit.button("%s: %s" % [Loc.t("music"), Loc.t("on" if Progress.music else "off")])
+	music.pressed.connect(func() -> void:
+		Progress.music = not Progress.music
+		Progress.save()
+		Sound.refresh_music()
+		show_settings())
+	pv.add_child(music)
 	var vib := Kit.button("%s: %s" % [Loc.t("vibration"), Loc.t("on" if Progress.vibration else "off")])
 	vib.pressed.connect(func() -> void:
 		Progress.vibration = not Progress.vibration
@@ -340,7 +348,7 @@ func _shot_mode(spec: String) -> void:
 			# A bot rolls to the wanted spot so the picture shows real play.
 			var bot := load("res://scripts/core/bot.gd")
 			while _game.sim.s < at and _game.sim.state == 0:
-				_game.sim.step(bot.steer(_game.sim, 1.0))
+				_game.sim.step(bot.steer(_game.sim, 1.0), bot.jump(_game.sim))
 				for e in _game.sim.events:
 					_game.view.on_event(e)
 				_game.sim.events.clear()

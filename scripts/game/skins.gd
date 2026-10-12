@@ -2,7 +2,7 @@
 extends RefCounted
 
 const INFO := {
-	"classic": {"a": Color("c9d2dc"), "b": Color("2f8bff"), "metal": 0.75, "rough": 0.3, "glow": 0.0},
+	"classic": {"a": Color("aeb9c8"), "b": Color("1668f0"), "metal": 0.85, "rough": 0.22, "glow": 0.0},
 	"neon_pulse": {"a": Color("131a30"), "b": Color("22e6ff"), "metal": 0.6, "rough": 0.35, "glow": 1.6},
 	"gold_core": {"a": Color("f2b632"), "b": Color("a86a12"), "metal": 0.95, "rough": 0.22, "glow": 0.0},
 	"lava": {"a": Color("2a1410"), "b": Color("ff7a1a"), "metal": 0.1, "rough": 0.8, "glow": 2.0},
@@ -73,6 +73,13 @@ static func material(id: String) -> StandardMaterial3D:
 	m.metallic = info["metal"]
 	m.roughness = info["rough"]
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST if id == "retro_pixel" else BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	# A lacquered, lit-from-behind look: what makes a ball read as an object worth owning.
+	m.clearcoat_enabled = true
+	m.clearcoat = 0.8
+	m.clearcoat_roughness = 0.12
+	m.rim_enabled = true
+	m.rim = 0.35
+	m.rim_tint = 0.4
 	if info["glow"] > 0.0:
 		m.emission_enabled = true
 		m.emission_texture = ImageTexture.create_from_image(glow)

@@ -9,15 +9,15 @@ const Skins := preload("res://scripts/game/skins.gd")
 
 const WORLDS := [
 	{  # Sky Islands
-		"tile_a": Color("ecc977"), "tile_b": Color("dcb45f"), "edge": Color("fbe9b4"), "crack": Color("b98a4a"),
-		"ramp": Color("ff9f1c"), "sky_top": Color("1f6fd6"), "sky_horizon": Color("9fd0f7"),
-		"ground": Color("7fb8ee"), "fog": 0.0022, "sun": Color("fff3d6"), "sun_energy": 1.35, "ambient": 0.42,
+		"tile_a": Color("d9a443"), "tile_b": Color("c08a32"), "edge": Color("f0c96a"), "crack": Color("8a5a2c"),
+		"ramp": Color("ff7a1c"), "sky_top": Color("1257c4"), "sky_horizon": Color("7fbcf2"),
+		"ground": Color("5fa3e6"), "fog": 0.0016, "sun": Color("fff0cf"), "sun_energy": 0.95, "ambient": 0.3,
 		"accent": Color("e5484d"),
 	},
 	{  # Desert Canyon
 		"tile_a": Color("d98e4a"), "tile_b": Color("c97b3b"), "edge": Color("f3b877"), "crack": Color("8a4a22"),
 		"ramp": Color("ffe066"), "sky_top": Color("e8743b"), "sky_horizon": Color("ffd9a0"),
-		"ground": Color("a85a30"), "fog": 0.003, "sun": Color("ffd2a0"), "sun_energy": 1.3, "ambient": 0.42,
+		"ground": Color("a85a30"), "fog": 0.003, "sun": Color("ffd2a0"), "sun_energy": 1.05, "ambient": 0.38,
 		"accent": Color("7a3cff"),
 	},
 	{  # Neon Nights
@@ -51,10 +51,19 @@ var _cam_ready := false
 var _shake := 0.0
 var _confetti: CPUParticles3D
 var _trail: CPUParticles3D
+var _keels: Array[Array] = []           # [row, node]: supports under the road
+var _burst: CPUParticles3D
+var _dust: CPUParticles3D
+var _streak: CPUParticles3D
+var _streak_mat: StandardMaterial3D
+var _squash := 0.0
+
+var world := 0
 
 func setup(t: RefCounted, run: RefCounted, world_index: int, skin: String) -> void:
 	track = t
 	sim = run
+	world = world_index
 	pal = WORLDS[clampi(world_index, 0, WORLDS.size() - 1)]
 	_environment(world_index)
 	_build_tiles()
@@ -77,6 +86,8 @@ func rebind(run: RefCounted) -> void:
 		_tiles.set_instance_transform(i, _base[i])
 	for c in _crystals:
 		c.visible = true
+	for k in _keels:
+		k[1].visible = true
 	for r in _rings:
 		(r.material_override as StandardMaterial3D).albedo_color = Color("ffffff")
 		(r.material_override as StandardMaterial3D).emission = Color("ffffff")
@@ -89,6 +100,7 @@ func _mat(color: Color, rough: float = 0.8, emission: float = 0.0, metal: float 
 	m.albedo_color = color
 	m.roughness = rough
 	m.metallic = metal
+	m.metallic_specular = 0.5 if metal > 0.0 else 0.12   # matte things must not mirror the sky
 	if emission > 0.0:
 		m.emission_enabled = true
 		m.emission = color
@@ -108,12 +120,20 @@ func _environment(world_index: int) -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = pal["sky_horizon"].lerp(Color.WHITE, 0.5)
+	env.ambient_light_color = pal["sky_horizon"].lerp(Color.WHITE, 0.25)
 	env.ambient_light_energy = pal["ambient"]
 	env.fog_enabled = true
 	env.fog_light_color = pal["sky_horizon"]
 	env.fog_density = pal["fog"]
 	env.fog_sky_affect = 0.0
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_white = 9.0
+	env.glow_enabled = true
+	env.glow_intensity = 0.38
+	env.glow_bloom = 0.0
+	env.glow_hdr_threshold = 1.35
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -121,6 +141,11 @@ func _environment(world_index: int) -> void:
 	sun.light_color = pal["sun"]
 	sun.light_energy = pal["sun_energy"]
 	sun.rotation_degrees = Vector3(-52.0, 35.0 if world_index != 1 else 70.0, 0.0)
+	sun.shadow_enabled = true
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	sun.directional_shadow_max_distance = 42.0
+	sun.shadow_bias = 0.06
+	sun.shadow_opacity = 0.7
 	add_child(sun)
 
 func _tile_basis(row: int) -> Basis:
@@ -132,6 +157,56 @@ func _tile_basis(row: int) -> Basis:
 	# On a bend the rows fan out: stretch the tiles a little so no gaps open on the outside.
 	return basis.scaled_local(Vector3(0.97, 1.0, 0.97 + absf(track.curvature[row]) * 4.2))
 
+const TILE_DEPTH := 1.0
+
+## One stone slab: a paler face inside a darker joint, a little grain, a few scratches. Drawn
+## once per world and tinted per tile through the instance colour.
+func _tile_material(world_index: int) -> StandardMaterial3D:
+	var n := 128
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	var grain := FastNoiseLite.new()
+	grain.seed = 11 + world_index
+	grain.frequency = 0.045
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5 + world_index
+	for y in n:
+		for x in n:
+			var edge: int = mini(mini(x, y), mini(n - 1 - x, n - 1 - y))
+			var v := 0.9 + grain.get_noise_2d(x, y) * 0.09
+			if edge < 3:
+				v *= 0.5      # the joint between slabs
+			elif edge < 7:
+				v *= 1.12     # a lit bevel just inside it
+			img.set_pixel(x, y, Color(v, v, v))
+	for k in 5:
+		var p := Vector2(rng.randf_range(12, n - 12), rng.randf_range(12, n - 12))
+		var dir := Vector2.from_angle(rng.randf() * TAU)
+		for step in rng.randi_range(8, 26):
+			p += dir + Vector2(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.6, 0.6))
+			if p.x > 8 and p.y > 8 and p.x < n - 8 and p.y < n - 8:
+				img.set_pixelv(Vector2i(p), img.get_pixelv(Vector2i(p)) * 0.82)
+	img.generate_mipmaps()
+	var bumps := NoiseTexture2D.new()
+	bumps.width = 128
+	bumps.height = 128
+	bumps.seamless = true
+	bumps.as_normal_map = true
+	bumps.bump_strength = 5.0
+	var bn := FastNoiseLite.new()
+	bn.frequency = 0.06
+	bumps.noise = bn
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.albedo_texture = ImageTexture.create_from_image(img)
+	mat.uv1_triplanar = true
+	mat.uv1_offset = Vector3(0.5, 0.5, 0.5)
+	mat.normal_enabled = true
+	mat.normal_texture = bumps
+	mat.normal_scale = 0.6
+	mat.roughness = 0.42 if world_index == 2 else 0.78
+	mat.metallic = 0.35 if world_index == 2 else 0.0
+	return mat
+
 func _build_tiles() -> void:
 	_inst.resize(track.rows * B.COLS)
 	_inst.fill(-1)
@@ -141,11 +216,8 @@ func _build_tiles() -> void:
 			_inst[i] = count
 			count += 1
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(B.CELL, 0.5, B.CELL)
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 0.85
-	mesh.material = mat
+	mesh.size = Vector3(B.CELL, TILE_DEPTH, B.CELL)
+	mesh.material = _tile_material(world)
 	_tiles = MultiMesh.new()
 	_tiles.transform_format = MultiMesh.TRANSFORM_3D
 	_tiles.use_colors = true
@@ -173,15 +245,17 @@ func _build_tiles() -> void:
 			var kind: int = track.cells[i]
 			var color: Color = pal["tile_a"] if (row + c) % 2 == 0 else pal["tile_b"]
 			if c == first or c == last:
-				color = color.lerp(pal["edge"], 0.75)
+				color = color.lerp(pal["edge"], 0.6)
 			if ramp:
 				color = pal["ramp"] if (row + c) % 2 == 0 else pal["ramp"].darkened(0.25)
 			if finish:
 				color = Color("f5f5f5") if (row + c) % 2 == 0 else Color("20242c")
-			var drop := -0.25
+			var drop := -TILE_DEPTH * 0.5
+			if (c == first or c == last) and not ramp and not finish and kind == Track.Cell.SOLID:
+				drop += 0.07   # border stones stand a little proud of the road
 			if kind == Track.Cell.CRUMBLE:
 				color = pal["crack"] if (row + c) % 2 == 0 else pal["crack"].darkened(0.2)
-				drop = -0.31
+				drop -= 0.07
 			var xf := Transform3D(basis, track.to_world(row + 0.5, Track.d_of(c), drop))
 			_base[_inst[i]] = xf
 			_tiles.set_instance_transform(_inst[i], xf)
@@ -203,7 +277,7 @@ func _build_items() -> void:
 	gem.height = 0.95
 	gem.radial_segments = 4
 	gem.rings = 1
-	var gem_mat := _mat(Color("39e6ff"), 0.15, 1.3, 0.3)
+	var gem_mat := _mat(Color("12c8ff"), 0.12, 0.75, 0.4)
 	for c in track.crystals:
 		var n := MeshInstance3D.new()
 		n.mesh = gem
@@ -358,92 +432,169 @@ func _build_items() -> void:
 	_confetti.color_initial_ramp = ramp
 	_place(_confetti, track.finish_s + 1.0, 0.0, 1.0)
 
+## Low-poly look: every face gets its own normal, so shapes read as cut stone, not as blobs.
+func _faceted(mesh: PrimitiveMesh) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.create_from(mesh, 0)
+	st.deindex()
+	st.generate_normals()
+	return st.commit()
+
+func _prop(parent: Node3D, mesh: Mesh, mat: Material, at: Vector3, scale: Vector3 = Vector3.ONE) -> MeshInstance3D:
+	var m := MeshInstance3D.new()
+	m.mesh = mesh
+	m.material_override = mat
+	m.position = at
+	m.scale = scale
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(m)
+	return m
+
+func _window_texture(rng: RandomNumberGenerator, a: Color, b: Color) -> ImageTexture:
+	var img := Image.create(32, 64, false, Image.FORMAT_RGBA8)
+	img.fill(Color.BLACK)
+	for y in range(2, 62, 4):
+		for x in range(2, 30, 4):
+			if rng.randf() < 0.45:
+				img.fill_rect(Rect2i(x, y, 2, 2), a if rng.randf() < 0.6 else b)
+	return ImageTexture.create_from_image(img)
+
 func _build_scenery(world_index: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(track.id) + 17
-	var mats := [_mat(Color("7a5a3a")), _mat(Color("5fbf4a")), _mat(Color("ffffff"), 1.0, 0.25)]
-	if world_index == 1:
-		mats = [_mat(Color("b5653a")), _mat(Color("d98e4a")), _mat(Color("ffe2b8"), 1.0, 0.2)]
-	elif world_index == 2:
-		mats = [_mat(Color("141a33")), _mat(Color("22e6ff"), 0.4, 2.0), _mat(Color("ff3df0"), 0.4, 2.0)]
-	var row := 4
+	var cone := CylinderMesh.new()
+	cone.top_radius = 1.0
+	cone.bottom_radius = 0.12
+	cone.height = 1.0
+	cone.radial_segments = 7
+	cone.rings = 1
+	var rock_mesh := _faceted(cone)
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.96
+	disc.bottom_radius = 1.04
+	disc.height = 1.0
+	disc.radial_segments = 7
+	disc.rings = 1
+	var cap_mesh := _faceted(disc)
+	var tree_top := CylinderMesh.new()
+	tree_top.top_radius = 0.0
+	tree_top.bottom_radius = 1.0
+	tree_top.height = 1.0
+	tree_top.radial_segments = 6
+	tree_top.rings = 1
+	var tree_mesh := _faceted(tree_top)
+	var puff := SphereMesh.new()
+	puff.radius = 1.0
+	puff.height = 1.5
+	puff.radial_segments = 8
+	puff.rings = 4
+	var puff_mesh := _faceted(puff)
+	var cube := BoxMesh.new()
+
+	var rock := _mat(Color("6f5a4a"), 0.95)
+	var rock2 := _mat(Color("8a6f58"), 0.95)
+	var grass := _mat(Color("5cc24a"), 0.9)
+	var leaf := _mat(Color("2f9a4a"), 0.9)
+	var trunk := _mat(Color("6b4a2c"), 0.9)
+	var cloud := _mat(Color("ffffff"), 1.0, 0.18)
+	var sand_a := _mat(Color("c8743c"), 0.95)
+	var sand_b := _mat(Color("e09a58"), 0.95)
+	var sand_c := _mat(Color("9c5230"), 0.95)
+	var cactus := _mat(Color("3f8f4a"), 0.9)
+	var dark := StandardMaterial3D.new()
+	dark.albedo_color = Color("10152c")
+	dark.roughness = 0.5
+	dark.metallic = 0.4
+	var lit: Array[StandardMaterial3D] = []
+	if world_index == 2:
+		for k in 3:
+			var m := StandardMaterial3D.new()
+			m.albedo_color = Color("0c1024")
+			m.emission_enabled = true
+			m.emission_texture = _window_texture(rng, Color("22e6ff"), Color("ff3df0") if k != 1 else Color("ffd23f"))
+			m.emission_energy_multiplier = 2.2
+			m.uv1_scale = Vector3(3, 3, 1)
+			lit.append(m)
+	var neon_a := _mat(Color("22e6ff"), 0.4, 2.6)
+	var neon_b := _mat(Color("ff3df0"), 0.4, 2.6)
+
+	var row := 2
 	while row < track.rows:
 		for side in [-1.0, 1.0]:
-			if rng.randf() < 0.25:
+			if rng.randf() < 0.2:
 				continue
-			var off: float = side * rng.randf_range(15.0, 46.0)
-			var at: Vector3 = track.to_world(row, off, 0.0)
+			var off: float = side * rng.randf_range(13.0, 48.0)
 			var n := Node3D.new()
 			add_child(n)
+			n.position = track.to_world(row, off, 0.0)
+			n.rotation.y = rng.randf() * TAU
 			match world_index:
 				0:
-					var r := rng.randf_range(4.0, 9.0)
-					n.position = at + Vector3(0, rng.randf_range(-16.0, -3.0), 0)
-					var rock := MeshInstance3D.new()
-					var cone := CylinderMesh.new()
-					cone.top_radius = r
-					cone.bottom_radius = r * 0.15
-					cone.height = r * 1.5
-					cone.radial_segments = 9
-					rock.mesh = cone
-					rock.material_override = mats[0]
-					rock.position.y = -cone.height * 0.5
-					n.add_child(rock)
-					var top := MeshInstance3D.new()
-					var disc := CylinderMesh.new()
-					disc.top_radius = r * 0.96
-					disc.bottom_radius = r * 1.03
-					disc.height = 0.7
-					disc.radial_segments = 9
-					top.mesh = disc
-					top.material_override = mats[1]
-					top.position.y = 0.3
-					n.add_child(top)
-					if rng.randf() < 0.7:
-						var cloud := MeshInstance3D.new()
-						var cs := SphereMesh.new()
-						cs.radius = rng.randf_range(4.0, 8.0)
-						cs.height = cs.radius * 0.9
-						cs.radial_segments = 10
-						cs.rings = 5
-						cloud.mesh = cs
-						cloud.material_override = mats[2]
-						cloud.position = Vector3(rng.randf_range(-10, 10), rng.randf_range(-14, -4), rng.randf_range(-10, 10))
-						n.add_child(cloud)
+					var r := rng.randf_range(4.0, 9.5)
+					n.position.y += rng.randf_range(-15.0, -2.5)
+					_prop(n, rock_mesh, rock, Vector3(0, -r * 0.75, 0), Vector3(r, r * 1.5, r))
+					_prop(n, rock_mesh, rock2, Vector3(r * 0.3, -r * 0.4, r * 0.2), Vector3(r * 0.55, r * 0.8, r * 0.55))
+					_prop(n, cap_mesh, grass, Vector3(0, 0.25, 0), Vector3(r, 0.7, r))
+					for k in rng.randi_range(1, 4):
+						var tp := Vector3(rng.randf_range(-0.6, 0.6) * r, 0.6, rng.randf_range(-0.6, 0.6) * r)
+						var th := rng.randf_range(1.6, 3.2)
+						_prop(n, cap_mesh, trunk, tp + Vector3(0, th * 0.2, 0), Vector3(0.22, th * 0.5, 0.22))
+						_prop(n, tree_mesh, leaf, tp + Vector3(0, th * 0.75, 0), Vector3(th * 0.42, th, th * 0.42))
+						_prop(n, tree_mesh, grass, tp + Vector3(0, th * 1.15, 0), Vector3(th * 0.3, th * 0.7, th * 0.3))
+					if rng.randf() < 0.75:
+						var c := Vector3(rng.randf_range(-12, 12), rng.randf_range(-13, -5), rng.randf_range(-12, 12))
+						for k in rng.randi_range(3, 5):
+							var cr := rng.randf_range(2.5, 5.5)
+							_prop(n, puff_mesh, cloud, c + Vector3(rng.randf_range(-5, 5), rng.randf_range(-0.6, 0.6), rng.randf_range(-3, 3)), Vector3(cr, cr * 0.62, cr))
 				1:
-					var h := rng.randf_range(30.0, 70.0)
-					var r2 := rng.randf_range(4.0, 9.0)
-					var mesa := MeshInstance3D.new()
-					var cm := CylinderMesh.new()
-					cm.top_radius = r2
-					cm.bottom_radius = r2 * 1.5
-					cm.height = h
-					cm.radial_segments = 7
-					mesa.mesh = cm
-					mesa.material_override = mats[rng.randi() % 2]
-					n.position = at + Vector3(0, rng.randf_range(-6.0, 8.0) - h * 0.5, 0)
-					n.add_child(mesa)
+					# A mesa in bands of rock, like cut sandstone.
+					var r := rng.randf_range(4.5, 9.0)
+					n.position.y += rng.randf_range(2.0, 12.0)
+					var bands := rng.randi_range(4, 6)
+					var top := 0.0
+					for k in bands:
+						var bh := rng.randf_range(4.0, 9.0) if k < bands - 1 else 60.0
+						var grow := 1.0 + k * 0.13
+						_prop(n, cap_mesh, [sand_b, sand_a, sand_c][k % 3], Vector3(0, top - bh * 0.5, 0), Vector3(r * grow, bh, r * grow))
+						top -= bh
+					if rng.randf() < 0.5:
+						var cp := Vector3(rng.randf_range(-0.5, 0.5) * r, 2.0, rng.randf_range(-0.5, 0.5) * r)
+						_prop(n, cap_mesh, cactus, cp, Vector3(0.4, 3.0, 0.4))
+						_prop(n, cap_mesh, cactus, cp + Vector3(0.8, 0.4, 0), Vector3(0.28, 1.4, 0.28))
 				_:
-					var h2 := rng.randf_range(30.0, 90.0)
-					var w := rng.randf_range(5.0, 9.0)
-					var tower := MeshInstance3D.new()
-					var tm := BoxMesh.new()
-					tm.size = Vector3(w, h2, w)
-					tower.mesh = tm
-					tower.material_override = mats[0]
-					n.position = at + Vector3(0, rng.randf_range(0.0, 18.0) - h2 * 0.5, 0)
-					n.rotation.y = rng.randf() * TAU
-					n.add_child(tower)
-					var lines := rng.randi_range(2, 4)
-					for k in lines:
-						var strip := MeshInstance3D.new()
-						var sm := BoxMesh.new()
-						sm.size = Vector3(w + 0.2, 0.5, w + 0.2)
-						strip.mesh = sm
-						strip.material_override = mats[1 + (k + rng.randi()) % 2]
-						strip.position.y = h2 * 0.5 - 3.0 - k * rng.randf_range(4.0, 9.0)
-						n.add_child(strip)
-		row += rng.randi_range(9, 16)
+					var h2 := rng.randf_range(34.0, 95.0)
+					var w := rng.randf_range(5.0, 9.5)
+					n.position.y += rng.randf_range(2.0, 22.0) - h2 * 0.5
+					n.rotation.y = track.yaw_at(row) + (0.0 if rng.randf() < 0.5 else PI * 0.5)
+					_prop(n, cube, lit[rng.randi() % lit.size()], Vector3.ZERO, Vector3(w, h2, w))
+					_prop(n, cube, dark, Vector3(0, h2 * 0.5 + 0.6, 0), Vector3(w * 0.7, 1.2, w * 0.7))
+					_prop(n, cube, neon_a if rng.randf() < 0.5 else neon_b, Vector3(0, h2 * 0.5 + 0.05, 0), Vector3(w + 0.25, 0.3, w + 0.25))
+					if rng.randf() < 0.5:
+						_prop(n, cube, neon_b if rng.randf() < 0.5 else neon_a, Vector3(0, h2 * 0.5 + 5.0, 0), Vector3(0.18, 9.0, 0.18))
+		row += rng.randi_range(8, 14)
+
+	# Under the road: something for it to rest on, so it does not look like a strip of paper.
+	var keel_mat := rock if world_index == 0 else (sand_c if world_index == 1 else dark)
+	var r2 := 3
+	while r2 < track.rows - 2:
+		if not track.row_empty(r2) and not track.row_empty(r2 + 1):
+			var k := Node3D.new()
+			add_child(k)
+			k.position = track.to_world(r2 + 0.5, 0.0, -TILE_DEPTH)
+			k.rotation.y = track.yaw_at(r2 + 0.5)
+			var wide := 0.0
+			for c in B.COLS:
+				if track.cell(r2, c) != Track.Cell.NONE:
+					wide += 1.0
+			if world_index == 1:
+				_prop(k, cap_mesh, keel_mat, Vector3(0, -30.0, 0), Vector3(wide * 0.3, 60.0, wide * 0.3))
+			elif world_index == 0:
+				_prop(k, rock_mesh, keel_mat, Vector3(0, -2.2, 0), Vector3(wide * 0.5, 4.4, 2.6))
+			else:
+				_prop(k, cube, dark, Vector3(0, -0.5, 0), Vector3(wide * 0.6, 1.0, 6.0))
+				_prop(k, cube, neon_a, Vector3(0, -1.05, 0), Vector3(wide * 0.62, 0.12, 6.0))
+			_keels.append([r2, k])
+		r2 += 6
 
 func _build_ball(skin: String) -> void:
 	ball = MeshInstance3D.new()
@@ -491,9 +642,68 @@ func _build_ball(skin: String) -> void:
 	_trail.mesh = tmesh
 	_trail.emitting = false
 	add_child(_trail)
+	_burst = _make_burst(Color("7df3ff"), 18, 5.5)
+	_dust = _make_burst(pal["edge"], 10, 2.4)
+	# A soft streak behind the ball, in the ball's own colour.
+	_streak = CPUParticles3D.new()
+	_streak.amount = 30
+	_streak.lifetime = 0.38
+	_streak.local_coords = false
+	_streak.gravity = Vector3.ZERO
+	_streak.initial_velocity_max = 0.2
+	_streak.scale_amount_min = 1.0
+	_streak.scale_amount_max = 1.0
+	var curve := Curve.new()
+	curve.add_point(Vector2(0, 1))
+	curve.add_point(Vector2(1, 0))
+	_streak.scale_amount_curve = curve
+	var smesh := SphereMesh.new()
+	smesh.radius = 0.2
+	smesh.height = 0.4
+	smesh.radial_segments = 8
+	smesh.rings = 4
+	_streak_mat = StandardMaterial3D.new()
+	_streak_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_streak_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smesh.material = _streak_mat
+	_streak.mesh = smesh
+	add_child(_streak)
+	_tint_streak(skin)
+
+func _tint_streak(skin: String) -> void:
+	var c: Color = Skins.colors(skin)["b"]
+	_streak_mat.albedo_color = Color(c.r, c.g, c.b, 0.3)
+
+func _make_burst(color: Color, amount: int, speed: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.emitting = false
+	p.one_shot = true
+	p.amount = amount
+	p.lifetime = 0.5
+	p.explosiveness = 1.0
+	p.local_coords = false
+	p.direction = Vector3.UP
+	p.spread = 75.0
+	p.initial_velocity_min = speed * 0.5
+	p.initial_velocity_max = speed
+	p.gravity = Vector3(0, -9, 0)
+	var curve := Curve.new()
+	curve.add_point(Vector2(0, 1))
+	curve.add_point(Vector2(1, 0))
+	p.scale_amount_curve = curve
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.14, 0.14, 0.14)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material = mat
+	p.mesh = mesh
+	add_child(p)
+	return p
 
 func set_skin(skin: String) -> void:
 	ball.material_override = Skins.material(skin)
+	_tint_streak(skin)
 
 # --- Per frame ----------------------------------------------------------------------------
 
@@ -502,11 +712,22 @@ func on_event(e: Dictionary) -> void:
 	match e["t"]:
 		"crystal":
 			_crystals[e["i"]].visible = false
+			_burst.position = _crystals[e["i"]].position
+			_burst.restart()
+		"land":
+			_dust.position = ball.position - Vector3(0, B.BALL_RADIUS, 0)
+			_dust.restart()
+			_squash = 1.0
+		"launch":
+			_squash = -1.0
 		"crumble":
 			var i: int = _inst[e["row"] * B.COLS + e["col"]]
 			if i >= 0:
 				_falling[i] = 0.0
 		"collapse":
+			for k in _keels:
+				if k[0] == e["row"]:
+					k[1].visible = false
 			for c in B.COLS:
 				var i: int = _inst[e["row"] * B.COLS + c]
 				if i >= 0 and not _falling.has(i):
@@ -517,6 +738,8 @@ func on_event(e: Dictionary) -> void:
 			m.emission = Color("3ddc97")
 		"respawn":
 			_falling.clear()
+			for k in _keels:
+				k[1].visible = k[0] >= sim.behind_row
 			var first: int = sim.behind_row * B.COLS
 			for cell in range(first, _inst.size()):
 				if _inst[cell] >= 0:
@@ -541,7 +764,13 @@ func present(delta: float, steer: float, s: float = -1.0, d: float = 0.0, h: flo
 	var p: Vector3 = track.to_world(s, d, h + B.BALL_RADIUS)
 	ball.position = p
 	_spin = Basis(rgt, -sim.vs * delta / B.BALL_RADIUS) * Basis(fwd, sim.vd * delta / B.BALL_RADIUS) * _spin
-	ball.basis = _spin.orthonormalized()
+	# A touch of squash on landing and stretch on take-off.
+	_squash = move_toward(_squash, 0.0, delta * 5.0)
+	var sy := 1.0 - _squash * 0.22
+	var sxz := 1.0 + _squash * 0.12
+	ball.basis = Basis.from_scale(Vector3(sxz, sy, sxz)) * _spin.orthonormalized()
+	_streak.position = p
+	_streak.emitting = sim.state == Sim.State.RUNNING and sim.vs > 4.0
 	shadow.visible = h > -0.3 and sim.solid_at(s, d)
 	shadow.position = track.to_world(s, d, 0.02)
 	var squash := clampf(1.0 - h * 0.12, 0.45, 1.0)

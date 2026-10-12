@@ -5,6 +5,10 @@ const RATE := 22050
 var _streams := {}
 var _players: Array[AudioStreamPlayer] = []
 var _next := 0
+var _music: AudioStreamPlayer
+var _tracks := {}                 # world index -> AudioStreamWAV, filled by a worker thread
+var _thread: Thread
+var _music_world := -1
 
 func _ready() -> void:
 	_streams["crystal"] = _tone([[880, 0.05], [1320, 0.09]], 0.5, 9.0)
@@ -23,6 +27,83 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		_players.append(p)
+	_music = AudioStreamPlayer.new()
+	_music.volume_db = -15.0
+	add_child(_music)
+	# Composing the three loops takes a moment: do it off the main thread.
+	_thread = Thread.new()
+	_thread.start(_compose_all)
+
+func _exit_tree() -> void:
+	if _thread != null and _thread.is_started():
+		_thread.wait_to_finish()
+
+func _compose_all() -> void:
+	for w in 3:
+		var track := _compose(w)
+		call_deferred("_track_ready", w, track)
+
+func _track_ready(w: int, track: AudioStreamWAV) -> void:
+	_tracks[w] = track
+	if w == _music_world:
+		set_music(w)
+
+## Starts (or stops, per the setting) the loop of a world.
+func set_music(world: int) -> void:
+	_music_world = world
+	if not Progress.music:
+		_music.stop()
+		return
+	if _tracks.has(world) and _music.stream != _tracks[world]:
+		_music.stream = _tracks[world]
+		_music.play()
+	elif _tracks.has(world) and not _music.playing:
+		_music.play()
+
+func refresh_music() -> void:
+	set_music(_music_world)
+
+## A calm loop: a soft two-note pad under a plucked pattern. One key and tempo per world.
+func _compose(world: int) -> AudioStreamWAV:
+	var rate := 16000
+	var bpm: float = [96.0, 88.0, 112.0][world]
+	var root: float = [220.0, 196.0, 174.61][world]
+	var scale: Array = [[0, 4, 7, 9, 12, 16], [0, 3, 5, 7, 10, 12], [0, 3, 7, 10, 12, 15]][world]
+	var pattern: Array = [[0, 2, 4, 2, 3, 2, 5, 2, 0, 2, 4, 2, 3, 1, 2, 1], [0, 3, 2, 3, 4, 3, 2, 1, 0, 3, 2, 3, 5, 4, 2, 1], [0, 2, 4, 5, 4, 2, 3, 2, 0, 2, 4, 5, 3, 2, 1, 2]][world]
+	var chords: Array = [[0, -5, -3, -7], [0, -2, -4, -7], [0, -4, -2, -5]][world]
+	var step := 60.0 / bpm / 2.0
+	var steps := 64
+	var total := int(steps * step * rate)
+	var out := PackedFloat32Array()
+	out.resize(total)
+	for i in total:
+		var t := float(i) / rate
+		var k := int(t / step)
+		var local := t - k * step
+		var chord: int = chords[(k / 16) % 4]
+		var base := root * pow(2.0, chord / 12.0)
+		var pad := (sin(TAU * base * 0.5 * t) + 0.6 * sin(TAU * base * 0.75 * t)) * (0.5 + 0.2 * sin(TAU * 0.2 * t))
+		var note: int = scale[pattern[k % 16]] + chord
+		var f := root * 2.0 * pow(2.0, note / 12.0)
+		var pluck := (sin(TAU * f * local) + 0.35 * sin(TAU * f * 2.0 * local)) * exp(-7.0 * local) * minf(1.0, local * 400.0)
+		out[i] = pad * 0.16 + pluck * 0.3
+	# Close the loop without a click.
+	var fade := int(rate * 0.03)
+	for i in fade:
+		out[total - 1 - i] *= float(i) / fade
+		out[i] *= float(i) / fade
+	var bytes := PackedByteArray()
+	bytes.resize(total * 2)
+	for i in total:
+		bytes.encode_s16(i * 2, int(clampf(out[i], -1.0, 1.0) * 30000.0))
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = rate
+	w.stereo = false
+	w.data = bytes
+	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	w.loop_end = total
+	return w
 
 func play(name: String, pitch: float = 1.0) -> void:
 	if not Progress.sound or not _streams.has(name):

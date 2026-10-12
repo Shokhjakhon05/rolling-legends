@@ -24,7 +24,15 @@ var phase := Phase.PLAY
 var lives := LIVES
 var _steer := 0.0
 var _touch := -1
-var _anchor_x := 0.0
+var _touch_x := 0.0
+var _touch_d := 0.0
+var _touch_at := 0
+var _touch_moved := 0.0
+var _target_d := 0.0
+var _jump := false
+var _jump_zones: Array[Vector2] = []
+var _jump_buttons: Array[Panel] = []
+const JUMP_ZONE_RADIUS := 105.0
 var _prev := Vector3.ZERO
 var _down_timer := 0.0
 var _continued := false
@@ -34,7 +42,7 @@ var _result := {}
 var _layer: CanvasLayer
 var _hud: Control
 var _crystal_label: Label
-var _lives_label: Label
+var _lives: Control
 var _progress: ProgressBar
 var _hint: Label
 var _toast: Label
@@ -57,24 +65,36 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if attract or phase != Phase.PLAY:
 		return
+	if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_up"):
+		_jump = true
 	if event is InputEventScreenTouch:
-		if event.pressed and _touch == -1:
-			_touch = event.index
-			_anchor_x = event.position.x
-			_steer = 0.0
-		elif not event.pressed and event.index == _touch:
+		if event.pressed:
+			# A touch on a jump button, or a second finger anywhere, is a jump - at once.
+			var on_button := false
+			for zone in _jump_zones:
+				if event.position.distance_to(zone) < JUMP_ZONE_RADIUS:
+					on_button = true
+			if on_button or _touch != -1:
+				_jump = true
+			else:
+				_touch = event.index
+				_touch_x = event.position.x
+				_touch_d = sim.d
+				_target_d = sim.d
+				_touch_at = Time.get_ticks_msec()
+				_touch_moved = 0.0
+		elif event.index == _touch:
+			# A quick tap that never became a drag is a jump too.
+			if Time.get_ticks_msec() - _touch_at < 220 and _touch_moved < 16.0:
+				_jump = true
 			_touch = -1
-			_steer = 0.0
 	elif event is InputEventScreenDrag and event.index == _touch:
-		# A sliding joystick: full steer at about a seventh of the screen width, and the
-		# anchor follows the finger so a change of direction answers at once.
-		var reach := get_viewport().get_visible_rect().size.x * 0.14 / Progress.sensitivity
-		var dx: float = event.position.x - _anchor_x
-		if dx > reach:
-			_anchor_x = event.position.x - reach
-		elif dx < -reach:
-			_anchor_x = event.position.x + reach
-		_steer = clampf((event.position.x - _anchor_x) / reach, -1.0, 1.0)
+		# The ball follows the finger: dragging across the whole screen moves it across a
+		# little more than the whole road.
+		var dx: float = event.position.x - _touch_x
+		_touch_moved = maxf(_touch_moved, absf(dx))
+		var per_px := 9.0 * Progress.sensitivity / get_viewport().get_visible_rect().size.x
+		_target_d = clampf(_touch_d + dx * per_px, -B.COLS * 0.5, B.COLS * 0.5)
 
 func _notification(what: int) -> void:
 	if attract:
@@ -102,17 +122,27 @@ func _physics_process(_delta: float) -> void:
 			sim.respawn()
 			_drain()
 			_prev = Vector3(sim.s, sim.d, sim.h)
+			_touch = -1
+			_jump = false
 			phase = Phase.PLAY
+		return
+	if phase == Phase.WON:
+		_prev = Vector3(sim.s, sim.d, sim.h)
+		sim.step(0.0)  # rolls to a stop on the finish pad
 		return
 	if phase != Phase.PLAY:
 		return
-	var steer := _steer
+	var jump := _jump
+	_jump = false
 	if attract:
-		steer = Bot.steer(sim, 1.0)
-	elif _touch == -1:
-		steer = Input.get_axis("ui_left", "ui_right")
+		_steer = Bot.steer(sim, 1.0)
+		jump = Bot.jump(sim)
+	elif _touch != -1:
+		_steer = clampf((_target_d - sim.d) * B.STEER_GAIN / B.SIDE_SPEED, -1.0, 1.0)
+	else:
+		_steer = Input.get_axis("ui_left", "ui_right")
 	_prev = Vector3(sim.s, sim.d, sim.h)
-	sim.step(steer)
+	sim.step(_steer, jump)
 	_drain()
 	if sim.state == Sim.State.LOST:
 		_on_lost()
@@ -149,19 +179,19 @@ func _drain() -> void:
 	sim.events.clear()
 
 func _process(delta: float) -> void:
-	var k := Engine.get_physics_interpolation_fraction() if phase == Phase.PLAY else 1.0
+	var k := Engine.get_physics_interpolation_fraction() if phase == Phase.PLAY or phase == Phase.WON else 1.0
 	var now := Vector3(sim.s, sim.d, sim.h)
 	var p := _prev.lerp(now, k)
 	view.present(delta, _steer, p.x, p.y, p.z)
 	if attract:
 		return
 	_crystal_label.text = "◆ %d / %d" % [sim.crystals, track.crystals.size()]
-	_lives_label.text = "♥".repeat(lives)
+	_lives.queue_redraw()
 	_progress.value = sim.progress()
 	if _toast_left > 0.0:
 		_toast_left -= delta
 		_toast.modulate.a = clampf(_toast_left * 2.0, 0.0, 1.0)
-	if _hint.visible and sim.s > 60.0:
+	if _hint.visible and sim.s > (112.0 if level == 4 else 60.0):
 		_hint.modulate.a = maxf(_hint.modulate.a - delta * 1.5, 0.0)
 
 func _on_lost() -> void:
@@ -231,13 +261,33 @@ func _build_hud() -> void:
 	_crystal_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(_crystal_label)
 
-	_lives_label = Kit.label("", 36, Kit.RED, false)
-	_lives_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_lives_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_lives_label.position = Vector2(-150, top + 16)
-	_lives_label.custom_minimum_size = Vector2(130, 0)
-	_lives_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hud.add_child(_lives_label)
+	# Hearts are drawn, not typed: the heart glyph is missing from the font on phones.
+	_lives = Control.new()
+	_lives.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_lives.offset_left = -170
+	_lives.offset_right = -20
+	_lives.offset_top = top + 18
+	_lives.offset_bottom = top + 66
+	_lives.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lives.draw.connect(_draw_lives)
+	_hud.add_child(_lives)
+
+	# Jump buttons in both bottom corners, for either thumb. They are only pictures: the
+	# touches are read in _unhandled_input so that steering and jumping work together.
+	for i in 2:
+		var b := Panel.new()
+		b.add_theme_stylebox_override("panel", Kit.box(Color(1, 1, 1, 0.13), 86, Color(1, 1, 1, 0.5), 3))
+		b.size = Vector2(172, 172)
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_jump_buttons.append(b)
+		var l := Kit.label("▲\n" + Loc.t("jump"), 22, Kit.TEXT)
+		l.set_anchors_preset(Control.PRESET_FULL_RECT)
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(l)
+		_hud.add_child(b)
+	_place_jump_buttons()
+	get_viewport().size_changed.connect(_place_jump_buttons)
 
 	_progress = ProgressBar.new()
 	_progress.min_value = 0.0
@@ -259,7 +309,7 @@ func _build_hud() -> void:
 	_hint.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_hint.offset_left = 40
 	_hint.offset_right = -40
-	_hint.position.y = -230
+	_hint.position.y = -330
 	_hint.add_theme_color_override("font_outline_color", Kit.INK)
 	_hint.add_theme_constant_override("outline_size", 10)
 	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -273,6 +323,14 @@ func _build_hud() -> void:
 	_toast.modulate.a = 0.0
 	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(_toast)
+
+func _draw_lives() -> void:
+	for i in LIVES:
+		var c := Vector2(_lives.size.x - 22 - i * 46, 22)
+		var color := Kit.RED if i < lives else Color(1, 1, 1, 0.22)
+		_lives.draw_circle(c + Vector2(-9, -5), 11, color)
+		_lives.draw_circle(c + Vector2(9, -5), 11, color)
+		_lives.draw_colored_polygon(PackedVector2Array([c + Vector2(-19, 0), c + Vector2(19, 0), c + Vector2(0, 21)]), color)
 
 ## The first levels teach by doing; one short line says what to try.
 func _show_hint() -> void:
@@ -416,3 +474,9 @@ func _leave_after_ad(action: String) -> void:
 	Ads.maybe_interstitial(Progress.levels_done, func() -> void:
 		if is_inside_tree():
 			leave.emit(action))
+
+func _place_jump_buttons() -> void:
+	var view := get_viewport().get_visible_rect().size
+	_jump_zones = [Vector2(112, view.y - 150), Vector2(view.x - 112, view.y - 150)]
+	for i in 2:
+		_jump_buttons[i].position = _jump_zones[i] - _jump_buttons[i].size * 0.5
