@@ -23,12 +23,15 @@ static func box(color: Color, radius: int = 22, border: Color = Color.TRANSPAREN
 	s.content_margin_bottom = 14
 	return s
 
+## A label wraps only when it is the full width of its parent (centered text); a short label
+## inside a row keeps its natural width.
 static func label(text: String, size: int = 30, color: Color = TEXT, center: bool = true) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if center:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if center:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return l
