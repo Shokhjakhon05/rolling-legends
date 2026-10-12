@@ -32,7 +32,7 @@ var track: RefCounted
 var sim: RefCounted
 var pal: Dictionary
 var camera: Camera3D
-var ball: MeshInstance3D
+var ball: Node3D
 var shadow: MeshInstance3D
 
 var _tiles: MultiMesh
@@ -597,14 +597,7 @@ func _build_scenery(world_index: int) -> void:
 		r2 += 6
 
 func _build_ball(skin: String) -> void:
-	ball = MeshInstance3D.new()
-	var sm := SphereMesh.new()
-	sm.radius = B.BALL_RADIUS
-	sm.height = B.BALL_RADIUS * 2.0
-	sm.radial_segments = 28
-	sm.rings = 14
-	ball.mesh = sm
-	ball.material_override = Skins.material(skin)
+	ball = Skins.build(skin)
 	add_child(ball)
 	shadow = MeshInstance3D.new()
 	var disc := CylinderMesh.new()
@@ -702,7 +695,11 @@ func _make_burst(color: Color, amount: int, speed: float) -> CPUParticles3D:
 	return p
 
 func set_skin(skin: String) -> void:
-	ball.material_override = Skins.material(skin)
+	var at := ball.position
+	ball.queue_free()
+	ball = Skins.build(skin)
+	add_child(ball)
+	ball.position = at
 	_tint_streak(skin)
 
 # --- Per frame ----------------------------------------------------------------------------

@@ -10,6 +10,7 @@ const LevelDb := preload("res://scripts/core/level_db.gd")
 
 var failures := 0
 var checks := 0
+const EXPECTED_CHECKS := 200   # raise when adding checks; a lower count means a test died
 
 func check(ok: bool, what: String) -> void:
 	checks += 1
@@ -21,7 +22,7 @@ func _init() -> void:
 	test_core()
 	test_levels()
 	# A script error aborts a test function without failing anything: count what ran.
-	if checks < 150:
+	if checks < EXPECTED_CHECKS:
 		failures += 1
 		print("  FAIL: only %d checks ran - a test stopped early" % checks)
 	print("\n%s (%d failure(s))" % ["TESTS FAILED" if failures > 0 else "ALL TESTS PASSED", failures])
@@ -84,6 +85,19 @@ func test_core() -> void:
 	check(sim.crystals == 3, "crystals on the path are collected")
 	check(sim.checkpoint == 0, "a checkpoint is activated by rolling through it")
 	check(sim.stars() == 3, "all crystals and no falls is three stars")
+
+	# Progress: a level's first-clear bonus is paid once, stars never go down.
+	var P: Node = load("res://scripts/services/progress.gd").new()
+	P.persist = false
+	P.stars = {}
+	P.crystals = 0
+	var first: Dictionary = P.finish_level(1, 2, 12.0, 3)
+	var again: Dictionary = P.finish_level(1, 1, 15.0, 3)
+	check(first["first"] and first["reward"] == 13, "first clear pays the crystals and the bonus")
+	check(not again["first"] and again["reward"] == 3, "a replay pays only what was collected")
+	check(P.stars_of(1) == 2, "a worse replay does not lower the stars")
+	check(P.unlocked(2) and not P.unlocked(3), "levels open one at a time")
+	P.free()
 
 	# Determinism: the same inputs give the same run.
 	var a: RefCounted = Bot.play(LevelDb.track(2))

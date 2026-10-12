@@ -12,20 +12,36 @@ Locked decisions:
 - Ads only through scripts/services/ads_service.gd; real ad ids only in repository secrets.
 - AdMob plugin (Poing Studios v5.1.0) is fetched by tool/fetch_admob.sh, never committed.
 
-Current milestone: first playable build (0.1.0) for the owner to try on a phone.
+Current milestone: 0.2.0 - answers the owner's first session on a phone (2026-10-12).
+
+What 0.2.0 changed:
+- Jumping is the player's (buttons in both bottom corners, a second finger, or a quick tap);
+  a press is buffered 0.14 s and forgiven 0.1 s after an edge. Gaps are lost without a jump.
+- Steering: the ball follows the finger (drag maps to a position across the road), instead of
+  a joystick with inertia. Numbers in scripts/core/balance.gd.
+- After the finish line the ball brakes to a stop on the pad; no input is taken.
+- Look: stone slab texture and raised border stones, sun shadows, restrained glow, faceted
+  islands with trees and clouds, banded mesas, lit towers, supports under the road.
+- Balls are small models (scripts/game/skins.gd build()): Solar Gold, Neon Reactor,
+  Obsidian Core have their own rings, studs, shell and core.
+- A music loop per world (synthesised), pickup and landing effects.
+- CI: `-f ads=test|real` decides which ad ids a build carries; test is the default.
 
 Verified:
-- [x] Godot project imports cleanly (CI)
-- [x] Tests pass: rules, 30 levels each finished by a bot (CI)
-- [x] Android debug APK, signed release APK and AAB export (CI run 38239049132)
-- [ ] Real-device test (owner, Poco X6 Pro) - nobody has played it on a phone yet
-- [ ] Ads seen on a device (test ids)
+- [x] Tests pass: rules, jump, gap failure, finish stop, rewards paid once, 30 levels by a bot
+- [x] Android release APK/AAB export and signing (CI)
+- [x] 0.1.0 launched and was played by the owner on a phone (two screen recordings)
+- [ ] 0.2.0 on a phone: look, steering feel, jump timing, music - not yet seen by anyone
+- [ ] An ad actually shown on a device (test or real) - never observed
+- [ ] Frame rate on a phone - never measured; the emulator cannot draw the 3D scene at all
+      (its software GL has too few fragment uniforms), so CI only proves start-up and scripts
 
-Not done: purchases, Rewind, music, endless and daily modes, worlds 4-6, store listing.
+Not done: purchases, Rewind, endless and daily modes, worlds 4-6, store listing, waterfalls and
+other set pieces from the concept art, a low-cost graphics preset.
 
 Next exact actions:
-1. Owner plays the APK; tune scripts/core/balance.gd from the feedback.
-2. Real AdMob ids into secrets ADMOB_APP_ID, REWARDED_AD_UNIT_ID, INTERSTITIAL_AD_UNIT_ID.
+1. Owner plays 0.2.0 (test ads) and reports; tune balance.gd and the look from that.
+2. Build with `-f ads=real` for the store only after the owner accepts a build.
 3. Privacy policy page, Play Console app, closed test.
 
 Do not replace the engine mid-milestone. Do not add an online backend. Do not commit ad ids,

@@ -337,6 +337,9 @@ func _shot_mode(spec: String) -> void:
 		elif arg.begins_with("--lang="):
 			Progress.language = arg.trim_prefix("--lang=")
 			Loc.refresh()
+		elif arg.begins_with("--skin="):
+			Progress.owned.append(arg.trim_prefix("--skin="))
+			Progress.skin = arg.trim_prefix("--skin=")
 		elif arg.begins_with("--stars="):
 			for n in range(1, int(arg.trim_prefix("--stars=")) + 1):
 				Progress.stars[str(n)] = 2 + n % 2

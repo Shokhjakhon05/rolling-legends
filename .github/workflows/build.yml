@@ -1,6 +1,6 @@
 name: Build - tests and Android export
 
-# Started by hand: `gh workflow run build.yml -f release=false`.
+# Started by hand: `gh workflow run build.yml -f release=true -f ads=test`.
 on:
   workflow_dispatch:
     inputs:
@@ -9,6 +9,12 @@ on:
         required: true
         default: false
         type: boolean
+      ads:
+        description: "Ad ids: 'test' (Google's public test ads - for trying a build on a phone) or 'real' (for the store)"
+        required: true
+        default: 'test'
+        type: choice
+        options: [test, real]
 
 concurrency:
   group: build-${{ github.ref }}
@@ -125,7 +131,10 @@ jobs:
           VERSION=$(grep '^config/version=' project.godot | cut -d'"' -f2)
           echo "VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
           sed -i "s/^version\/code=.*/version\/code=${{ github.run_number }}/; s/^version\/name=.*/version\/name=\"$VERSION\"/" export_presets.cfg
-          if [ "${{ inputs.release }}" = "true" ] && [ -n "$ADMOB_APP_ID" ] && [ -n "$REWARDED_AD_UNIT_ID" ] && [ -n "$INTERSTITIAL_AD_UNIT_ID" ]; then
+          if [ "${{ inputs.ads }}" = "real" ]; then
+            if [ -z "$ADMOB_APP_ID" ] || [ -z "$REWARDED_AD_UNIT_ID" ] || [ -z "$INTERSTITIAL_AD_UNIT_ID" ]; then
+              echo "::error::ads=real but the ad id secrets are not all set"; exit 1
+            fi
             printf '\n[admob]\n\ngeneral/android/app_id="%s"\n\n[rolling_legends]\n\nads/rewarded="%s"\nads/interstitial="%s"\n' \
               "$ADMOB_APP_ID" "$REWARDED_AD_UNIT_ID" "$INTERSTITIAL_AD_UNIT_ID" >> project.godot
             echo "ADS=real" >> "$GITHUB_ENV"
@@ -168,7 +177,7 @@ jobs:
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
         with:
-          name: rolling-legends-release
+          name: rolling-legends-release-${{ inputs.ads }}-ads
           path: |
             build/rolling-legends.aab
             build/rolling-legends.apk
