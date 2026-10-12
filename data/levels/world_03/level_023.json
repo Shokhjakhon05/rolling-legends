@@ -1,0 +1,120 @@
+{
+ "schemaVersion": 1,
+ "id": "world_03_level_023",
+ "number": 23,
+ "world": "neon_nights",
+ "stars": {
+  "crystals": 5,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "gate",
+     "s": 10,
+     "period": 2.2,
+     "open": 1.3,
+     "phase": 0.0
+    },
+    {
+     "t": "crystal",
+     "s": 4,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "gate",
+     "s": 10,
+     "period": 2.2,
+     "open": 1.3,
+     "phase": 0.5
+    },
+    {
+     "t": "crystal",
+     "s": 15,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "gate",
+     "s": 10,
+     "period": 2.0,
+     "open": 1.2,
+     "phase": 0.0
+    },
+    {
+     "t": "crystal",
+     "s": 15,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 35,
+   "len": 26,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "gate",
+     "s": 8,
+     "period": 2.2,
+     "open": 1.3,
+     "phase": 0.0
+    },
+    {
+     "t": "gate",
+     "s": 16,
+     "period": 2.2,
+     "open": 1.3,
+     "phase": 0.5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

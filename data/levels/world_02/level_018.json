@@ -1,0 +1,95 @@
+{
+ "schemaVersion": 1,
+ "id": "world_02_level_018",
+ "number": 18,
+ "world": "desert_canyon",
+ "stars": {
+  "crystals": 4,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 13,
+     "amp": 1.6,
+     "period": 2.6,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 40,
+   "len": 28,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 6
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 9,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "pendulum",
+     "s": 19,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.5,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

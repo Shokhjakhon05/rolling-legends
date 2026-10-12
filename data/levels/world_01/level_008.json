@@ -1,0 +1,106 @@
+{
+ "schemaVersion": 1,
+ "id": "world_01_level_008",
+ "number": 8,
+ "world": "sky_islands",
+ "stars": {
+  "crystals": 4,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 26
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 11,
+     "amp": 2.0,
+     "period": 2.8,
+     "phase": 0.0,
+     "r": 0.8
+    },
+    {
+     "t": "crystal",
+     "s": 4,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 11,
+     "amp": 2.0,
+     "period": 2.6,
+     "phase": 0.5,
+     "r": 0.8
+    },
+    {
+     "t": "crystal",
+     "s": 16,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 14,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 8,
+     "amp": 2.0,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.8
+    },
+    {
+     "t": "pendulum",
+     "s": 18,
+     "amp": 2.0,
+     "period": 2.4,
+     "phase": 0.5,
+     "r": 0.8
+    },
+    {
+     "t": "crystal",
+     "s": 13,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  }
+ ]
+}

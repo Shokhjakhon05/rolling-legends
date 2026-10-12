@@ -1,0 +1,96 @@
+{
+ "schemaVersion": 1,
+ "id": "world_02_level_017",
+ "number": 17,
+ "world": "desert_canyon",
+ "stars": {
+  "crystals": 7,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "islands",
+   "count": 4,
+   "plat": 6,
+   "gap": 4,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 15,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 25,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 35,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 10,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "islands",
+   "count": 3,
+   "plat": 5,
+   "gap": 4,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 23,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

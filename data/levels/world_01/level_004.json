@@ -1,0 +1,76 @@
+{
+ "schemaVersion": 1,
+ "id": "world_01_level_004",
+ "number": 4,
+ "world": "sky_islands",
+ "stars": {
+  "crystals": 6,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 26
+  },
+  {
+   "t": "hole",
+   "len": 20,
+   "from": 1,
+   "to": 3,
+   "at": 4,
+   "rows": 10,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 2,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "hole",
+   "len": 20,
+   "from": 3,
+   "to": 5,
+   "at": 4,
+   "rows": 10,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": -2,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18
+  },
+  {
+   "t": "gap",
+   "len": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 0.2,
+     "d": 0,
+     "n": 3,
+     "step": 1.1,
+     "arc": 1.6
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22
+  }
+ ]
+}

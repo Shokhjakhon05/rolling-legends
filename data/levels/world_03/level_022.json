@@ -1,0 +1,120 @@
+{
+ "schemaVersion": 1,
+ "id": "world_03_level_022",
+ "number": 22,
+ "world": "neon_nights",
+ "stars": {
+  "crystals": 9,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "items": [
+    {
+     "t": "boost",
+     "s": 6,
+     "d": 0.0
+    },
+    {
+     "t": "crystal",
+     "s": 12,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "gap",
+   "len": 6,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 0.5,
+     "d": 0,
+     "n": 3,
+     "step": 2.0,
+     "arc": 2.2
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 4
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 40,
+   "len": 30,
+   "items": [
+    {
+     "t": "boost",
+     "s": 6,
+     "d": 0.0
+    },
+    {
+     "t": "crystal",
+     "s": 12,
+     "d": 0,
+     "n": 3,
+     "step": 5
+    }
+   ]
+  },
+  {
+   "t": "hole",
+   "len": 22,
+   "from": 1,
+   "to": 3,
+   "at": 5,
+   "rows": 10,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "boost",
+     "s": 6,
+     "d": 0.0
+    },
+    {
+     "t": "barrier",
+     "s": 18,
+     "d": -1.5,
+     "w": 2
+    },
+    {
+     "t": "crystal",
+     "s": 18,
+     "d": 1.5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

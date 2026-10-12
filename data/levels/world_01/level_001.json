@@ -1,0 +1,36 @@
+{
+ "schemaVersion": 1,
+ "id": "world_01_level_001",
+ "number": 1,
+ "world": "sky_islands",
+ "stars": {
+  "crystals": 2,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 30,
+   "width": 7
+  },
+  {
+   "t": "straight",
+   "len": 40,
+   "width": 7,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 30,
+   "width": 7
+  }
+ ]
+}

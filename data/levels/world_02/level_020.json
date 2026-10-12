@@ -1,0 +1,187 @@
+{
+ "schemaVersion": 1,
+ "id": "world_02_level_020",
+ "number": 20,
+ "world": "desert_canyon",
+ "stars": {
+  "crystals": 10,
+  "par": 95
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 45,
+   "len": 32,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 7
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "gate",
+     "s": 11,
+     "period": 3.0,
+     "open": 1.7,
+     "phase": 0.0
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 24,
+   "cols": [
+    1,
+    2
+   ],
+   "at": 3,
+   "rows": 18,
+   "alt": 8,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 2,
+     "step": 3
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": -2,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "islands",
+   "count": 3,
+   "plat": 6,
+   "gap": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 4,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 13,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 22,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 10
+  },
+  {
+   "t": "turn",
+   "angle": -45,
+   "len": 32,
+   "width": 3
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 13,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 0,
+     "n": 2,
+     "step": 12
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "barrier",
+     "s": 7,
+     "d": -1.5,
+     "w": 2
+    },
+    {
+     "t": "barrier",
+     "s": 14,
+     "d": 1.5,
+     "w": 2
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

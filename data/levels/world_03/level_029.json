@@ -1,0 +1,142 @@
+{
+ "schemaVersion": 1,
+ "id": "world_03_level_029",
+ "number": 29,
+ "world": "neon_nights",
+ "stars": {
+  "crystals": 8,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "turn",
+   "angle": 50,
+   "len": 34,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 8
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 10,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 24,
+   "cols": [
+    1,
+    2
+   ],
+   "at": 3,
+   "rows": 18,
+   "alt": 6,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "gate",
+     "s": 10,
+     "period": 2.0,
+     "open": 1.2,
+     "phase": 0.0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 10,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "boost",
+     "s": 5,
+     "d": 0.0
+    },
+    {
+     "t": "crystal",
+     "s": 10,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "gap",
+   "len": 7,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 0.5,
+     "d": 0,
+     "n": 3,
+     "step": 2.3,
+     "arc": 2.4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 10,
+     "amp": 2.0,
+     "period": 2.0,
+     "phase": 0.0,
+     "r": 0.8
+    },
+    {
+     "t": "pendulum",
+     "s": 18,
+     "amp": 2.0,
+     "period": 2.0,
+     "phase": 0.5,
+     "r": 0.8
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

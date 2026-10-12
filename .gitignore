@@ -1,0 +1,10 @@
+.godot/
+android/
+*.apk
+*.aab
+*.idsig
+*.keystore
+*.jks
+key.properties
+build/
+/shots/
