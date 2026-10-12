@@ -7,7 +7,7 @@ APK=$(ls apk/*.apk | head -1)
 mkdir -p smoke
 adb install -r "$APK" || { echo "SMOKE FAILED: install"; exit 1; }
 adb logcat -c
-adb shell am start -n $PKG/com.godot.game.GodotApp >/dev/null
+adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 SIZE=$(adb shell wm size | tr -d '\r' | awk '{print $3}')
 W=${SIZE%x*}; H=${SIZE#*x}
 tap() { adb shell input tap $(( W * $1 / 100 )) $(( H * $2 / 100 )); }
@@ -25,7 +25,7 @@ sleep 6; shot 4_later; alive "playing"
 sleep 8; shot 5_end
 adb shell input keyevent KEYCODE_BACK; sleep 2; shot 6_back
 adb shell input keyevent KEYCODE_HOME; sleep 3
-adb shell am start -n $PKG/com.godot.game.GodotApp >/dev/null; sleep 5; shot 7_resumed; alive "resume"
+adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 5; shot 7_resumed; alive "resume"
 
 adb logcat -d > smoke/logcat.txt
 grep -E "SCRIPT ERROR|FATAL EXCEPTION|ERROR: |godot *: *ERROR" smoke/logcat.txt | tail -60 > smoke/errors.txt || true
