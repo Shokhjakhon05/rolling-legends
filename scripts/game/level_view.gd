@@ -57,6 +57,7 @@ var _dust: CPUParticles3D
 var _streak: CPUParticles3D
 var _streak_mat: StandardMaterial3D
 var _squash := 0.0
+var _painted := false                   # the road shader is in use: instance alpha = paint strength
 
 var world := 0
 
@@ -116,6 +117,11 @@ func _environment(world_index: int) -> void:
 	sky_mat.sun_angle_max = 12.0
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
+	if world_index < SKY_PANORAMA.size() and ResourceLoader.exists(SKY_PANORAMA[world_index]):
+		var pano := PanoramaSkyMaterial.new()
+		pano.panorama = load(SKY_PANORAMA[world_index])
+		pano.energy_multiplier = 1.0
+		sky.sky_material = pano
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
@@ -161,7 +167,23 @@ const TILE_DEPTH := 1.0
 
 ## One stone slab: a paler face inside a darker joint, a little grain, a few scratches. Drawn
 ## once per world and tinted per tile through the instance colour.
-func _tile_material(world_index: int) -> StandardMaterial3D:
+const STONE := [["res://assets/tex/sky_stone_diff.jpg", "res://assets/tex/sky_stone_nor.jpg"]]
+const SKY_PANORAMA := ["res://assets/tex/sky_day.jpg"]
+
+## Worlds that have a real stone texture use the road shader; the others keep the drawn slab.
+func _tile_material(world_index: int) -> Material:
+	if world_index < STONE.size() and ResourceLoader.exists(STONE[world_index][0]):
+		var sm := ShaderMaterial.new()
+		sm.shader = load("res://assets/road.gdshader")
+		sm.set_shader_parameter("stone", load(STONE[world_index][0]))
+		sm.set_shader_parameter("stone_normal", load(STONE[world_index][1]))
+		sm.set_shader_parameter("scale", 0.28)
+		sm.set_shader_parameter("roughness", 0.82)
+		_painted = true
+		return sm
+	return _drawn_tile_material(world_index)
+
+func _drawn_tile_material(world_index: int) -> StandardMaterial3D:
 	var n := 128
 	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
 	var grain := FastNoiseLite.new()
@@ -256,6 +278,9 @@ func _build_tiles() -> void:
 			if kind == Track.Cell.CRUMBLE:
 				color = pal["crack"] if (row + c) % 2 == 0 else pal["crack"].darkened(0.2)
 				drop -= 0.07
+			# With the stone shader plain slabs are only tinted; special ones are painted over.
+			var special: bool = ramp or finish or kind == Track.Cell.CRUMBLE
+			color.a = 0.95 if special else (0.5 if (c == first or c == last) else 0.32)
 			var xf := Transform3D(basis, track.to_world(row + 0.5, Track.d_of(c), drop))
 			_base[_inst[i]] = xf
 			_tiles.set_instance_transform(_inst[i], xf)
