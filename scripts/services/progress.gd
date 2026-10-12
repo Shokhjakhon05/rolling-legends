@@ -8,6 +8,7 @@ const PATH := "user://save.json"
 const VERSION := 1
 
 const SKINS := [
+	{"id": "legend", "price": 0},
 	{"id": "classic", "price": 0},
 	{"id": "neon_pulse", "price": 0, "need_level": 10},
 	{"id": "gold_core", "price": 150},
@@ -19,8 +20,8 @@ const SKINS := [
 var stars := {}            # level number (as text) -> best stars
 var best_time := {}        # level number (as text) -> best time, seconds
 var crystals := 0          # wallet
-var owned: Array = ["classic"]
-var skin := "classic"
+var owned: Array = ["legend", "classic"]
+var skin := "legend"
 var sound := true
 var music := true
 var vibration := true
@@ -49,9 +50,13 @@ func load_save() -> void:
 	owned = o if o is Array and not o.is_empty() else ["classic"]
 	if not owned.has("classic"):
 		owned.append("classic")
-	skin = str(data.get("skin", "classic"))
+	skin = str(data.get("skin", "legend"))
+	# The hero ball arrived in 0.3: everyone gets it, and it is put on once.
+	if not owned.has("legend"):
+		owned.append("legend")
+		skin = "legend"
 	if not owned.has(skin):
-		skin = "classic"
+		skin = "legend"
 	sound = bool(data.get("sound", true))
 	music = bool(data.get("music", true))
 	vibration = bool(data.get("vibration", true))

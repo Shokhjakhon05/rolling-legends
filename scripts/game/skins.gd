@@ -3,7 +3,10 @@
 ## studs, shells and cores make that ball its own design.
 extends RefCounted
 
+const HERO_MODEL := "res://assets/models/hero_ball.glb"
+
 const INFO := {
+	"legend": {"a": Color("0a1626"), "b": Color("18b8ff"), "metal": 0.5, "rough": 0.22, "glow": 0.0},
 	"classic": {"a": Color("aeb9c8"), "b": Color("1668f0"), "metal": 0.85, "rough": 0.22, "glow": 0.0},
 	"neon_pulse": {"a": Color("131a30"), "b": Color("22e6ff"), "metal": 0.6, "rough": 0.35, "glow": 1.6},
 	"gold_core": {"a": Color("f5b82e"), "b": Color("5a3410"), "metal": 0.95, "rough": 0.22, "glow": 0.0},
@@ -143,9 +146,69 @@ static func _ring(parent: Node3D, inner: float, outer: float, mat: Material, axi
 	parent.add_child(n)
 	return n
 
+## The owner's hero ball, modelled in Higgsfield 3D Jutsu. The file is a whole preview scene:
+## the floor, pedestal, camera and lights are dropped, and the ball is scaled so that its body
+## has the game's radius.
+static func _hero() -> Node3D:
+	if not ResourceLoader.exists(HERO_MODEL):
+		return null
+	var scene: PackedScene = load(HERO_MODEL)
+	if scene == null:
+		return null
+	var model: Node3D = scene.instantiate()
+	var body: MeshInstance3D = null
+	for n in model.find_children("*", "", true, false):
+		var name := String(n.name)
+		if name.begins_with("PREVIEW") or name.begins_with("CAM") or name.begins_with("LGT") or n is Light3D or n is Camera3D:
+			n.get_parent().remove_child(n)
+			n.queue_free()
+		elif n is MeshInstance3D:
+			if name.begins_with("HERO"):
+				body = n
+			_tame(n)
+	if body == null:
+		model.queue_free()
+		return null
+	# Centre on the body and bring it to the game's radius.
+	var box: AABB = body.get_aabb()
+	var to_root := body.transform
+	var p: Node = body.get_parent()
+	while p != null and p != model:
+		to_root = (p as Node3D).transform * to_root
+		p = p.get_parent()
+	var centre: Vector3 = to_root * box.get_center()
+	var radius: float = (to_root.basis * box.size).length() / sqrt(3.0) * 0.5
+	var k := R / maxf(radius, 0.001)
+	var holder := Node3D.new()
+	holder.add_child(model)
+	model.position = -centre * k
+	model.scale = Vector3.ONE * k
+	return holder
+
+## Mirror-dark metal only shows the bright sky; keep the model's colours as its author saw them.
+static func _tame(mesh: MeshInstance3D) -> void:
+	for i in mesh.mesh.get_surface_count():
+		var src := mesh.mesh.surface_get_material(i)
+		if src is StandardMaterial3D:
+			var m: StandardMaterial3D = src.duplicate()
+			if m.albedo_color.get_luminance() < 0.2:
+				m.metallic = minf(m.metallic, 0.35)
+				m.metallic_specular = 0.3
+				m.clearcoat_enabled = true
+				m.clearcoat = 0.5
+				m.clearcoat_roughness = 0.1
+			if m.emission_enabled:
+				m.emission_energy_multiplier = minf(m.emission_energy_multiplier, 1.3)
+			mesh.set_surface_override_material(i, m)
+
 ## The whole ball as a node; rotate it and everything rolls together.
 static func build(id: String) -> Node3D:
 	var root := Node3D.new()
+	if id == "legend":
+		var hero := _hero()
+		if hero != null:
+			root.add_child(hero)
+			return root
 	match id:
 		"gold_core":      # Solar Gold: polished gold, bronze hoops, bright studs at the poles
 			# Not a pure mirror: under a blue sky mirrored gold turns green.

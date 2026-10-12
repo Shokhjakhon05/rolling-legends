@@ -9,3 +9,4 @@ key.properties
 build/
 /shots/
 addons/admob/
+art_src/*.png

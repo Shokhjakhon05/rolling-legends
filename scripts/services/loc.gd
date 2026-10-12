@@ -41,6 +41,7 @@ const T := {
 	"jump": ["ПРЫЖОК", "JUMP", "SAKRASH"],
 	"hint_checkpoint": ["Кольцо — точка возврата", "The ring is your checkpoint", "Halqa — qaytish nuqtasi"],
 	"checkpoint": ["Чекпоинт!", "Checkpoint!", "Nazorat nuqtasi!"],
+	"skin_legend": ["Легенда", "Legend", "Afsona"],
 	"skin_classic": ["Классика", "Classic", "Klassik"],
 	"skin_neon_pulse": ["Неоновый реактор", "Neon Reactor", "Neon reaktor"],
 	"skin_gold_core": ["Солнечное золото", "Solar Gold", "Quyosh oltini"],

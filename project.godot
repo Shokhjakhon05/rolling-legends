@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Rolling Legends"
-config/version="0.2.0"
+config/version="0.3.0"
 run/main_scene="res://scenes/main.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
