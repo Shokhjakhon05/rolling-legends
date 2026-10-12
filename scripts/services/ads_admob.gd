@@ -15,15 +15,18 @@ func _ready() -> void:
 	_request_consent()
 
 func _request_consent() -> void:
-	var on_update := OnConsentInfoUpdateListener.new()
-	on_update.on_consent_info_update_success = func() -> void:
-		var on_dismissed := OnConsentFormDismissedListener.new()
-		on_dismissed.on_consent_form_dismissed = func(_error: FormError) -> void:
-			_start()
-		ConsentForm.load_and_show_consent_form_if_required(on_dismissed)
-	on_update.on_consent_info_update_failure = func(_error: FormError) -> void:
-		_start()
-	ConsentInformation.request_consent_info_update(ConsentRequestParameters.new(), on_update)
+	var info := UserMessagingPlatform.consent_information
+	info.update(
+		ConsentRequestParameters.new(),
+		func() -> void:
+			if info.get_is_consent_form_available() and info.get_consent_status() == ConsentInformation.ConsentStatus.REQUIRED:
+				UserMessagingPlatform.load_consent_form(
+					func(form: ConsentForm) -> void:
+						form.show(func(_error: FormError) -> void: _start()),
+					func(_error: FormError) -> void: _start())
+			else:
+				_start(),
+		func(_error: FormError) -> void: _start())
 
 func _start() -> void:
 	if _started:
@@ -106,8 +109,8 @@ func show_interstitial(done: Callable) -> void:
 	ad.show()
 
 func privacy_options_available() -> bool:
-	return ConsentInformation.get_privacy_options_requirement_status() == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+	var info := UserMessagingPlatform.consent_information
+	return info.get_privacy_options_requirement_status() == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
 
 func show_privacy_options() -> void:
-	UserMessagingPlatform.show_privacy_options_form(func(_error: FormError) -> void:
-		pass)
+	UserMessagingPlatform.show_privacy_options_form(func(_error: FormError) -> void: pass)

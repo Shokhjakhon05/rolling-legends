@@ -77,6 +77,11 @@ jobs:
         run: |
           godot --headless --import 2>&1 | tee import.log
           if grep -E "SCRIPT ERROR|Parse Error" import.log; then echo "::error::script errors on import"; exit 1; fi
+          # Scripts that only load on a phone are not touched by the import: parse them here.
+          for f in scripts/services/ads_admob.gd; do
+            godot --headless --check-only --script "res://$f" 2>&1 | tee check.log
+            if grep -E "SCRIPT ERROR|Parse Error" check.log; then echo "::error::$f does not parse"; exit 1; fi
+          done
 
       - name: Tests (rules, saves, every level played by a bot)
         run: godot --headless -s tests/run_tests.gd

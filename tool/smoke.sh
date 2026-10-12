@@ -28,7 +28,9 @@ adb shell input keyevent KEYCODE_HOME; sleep 3
 adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 5; shot 7_resumed; alive "resume"
 
 adb logcat -d > smoke/logcat.txt
-grep -E "SCRIPT ERROR|FATAL EXCEPTION|ERROR: |godot *: *ERROR" smoke/logcat.txt | tail -60 > smoke/errors.txt || true
+grep -E " godot +:" smoke/logcat.txt | cut -c34- | awk '!seen[$0]++' > smoke/godot_log.txt || true
+grep -E "SCRIPT ERROR|FATAL EXCEPTION" smoke/logcat.txt | head -60 > smoke/errors.txt || true
+grep -A1 "SCRIPT ERROR" smoke/godot_log.txt | head -40 >> smoke/errors.txt || true
 echo "---- errors ----"; cat smoke/errors.txt
 if grep -q "SCRIPT ERROR" smoke/errors.txt; then echo "SMOKE FAILED: script errors"; exit 1; fi
 if grep -q "FATAL EXCEPTION" smoke/errors.txt && grep -q "$PKG" smoke/errors.txt; then echo "SMOKE FAILED: crash"; exit 1; fi
