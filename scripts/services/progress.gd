@@ -15,6 +15,9 @@ const SKINS := [
 	{"id": "lava", "price": 350},
 	{"id": "retro_pixel", "price": 0, "need_stars": 45},
 	{"id": "storm", "price": 600},
+	{"id": "robo", "price": 0, "need_level": 15},
+	{"id": "titan", "price": 400},
+	{"id": "planet", "price": 800},
 ]
 
 var stars := {}            # level number (as text) -> best stars

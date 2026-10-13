@@ -158,25 +158,26 @@ func show_map() -> void:
 	scroll.add_child(list)
 	var total := LevelDb.count()
 	var current := Progress.next_level(total)
+	var per := LevelDb.per_world()
 	for w in 3:
 		var panel := Kit.panel(Color(0.07, 0.11, 0.21, 0.92))
 		var pv := Kit.vbox(14)
 		panel.add_child(pv)
 		var got := 0
-		for n in range(w * 10 + 1, w * 10 + 11):
+		for n in range(w * per + 1, w * per + per + 1):
 			got += Progress.stars_of(n)
 		var head := Kit.hbox(10)
 		var name := Kit.label(Loc.t("world_%d" % (w + 1)), 34, [Kit.GOLD, Color("ff9a52"), Color("ff6bf2")][w], false)
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		head.add_child(name)
-		head.add_child(Kit.label("★ %d / 30" % got, 28, Kit.GOLD, false))
+		head.add_child(Kit.label("★ %d / %d" % [got, per * 3], 28, Kit.GOLD, false))
 		pv.add_child(head)
 		var grid := GridContainer.new()
 		grid.columns = 5
 		grid.add_theme_constant_override("h_separation", 10)
 		grid.add_theme_constant_override("v_separation", 10)
 		pv.add_child(grid)
-		for n in range(w * 10 + 1, mini(w * 10 + 11, total + 1)):
+		for n in range(w * per + 1, mini(w * per + per + 1, total + 1)):
 			var open := Progress.unlocked(n)
 			var stars := Progress.stars_of(n)
 			var text := "%d\n%s" % [n, Kit.stars_text(stars)] if open else "%d\n🔒" % n
@@ -309,6 +310,12 @@ func show_settings() -> void:
 			show_settings())
 		langs.add_child(b)
 	pv.add_child(langs)
+
+	# The models are used under CC BY 4.0, which asks for the authors to be named.
+	var credits := Kit.label(Loc.t("credits") + ": Shahriar Shahrabi, Bl4ckGh0st, LowlyPoly, Ergoni, born2012, YD Visual, Cyril43, Micheal-Holloway, cmzw (Sketchfab, CC BY 4.0); Poly Haven (CC0)", 18, Kit.DIM)
+	credits.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	credits.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(credits)
 
 	v.add_child(Kit.spacer(0, true))
 	if Ads.privacy_options_available():

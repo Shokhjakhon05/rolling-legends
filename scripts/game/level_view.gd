@@ -6,10 +6,11 @@ const B := preload("res://scripts/core/balance.gd")
 const Track := preload("res://scripts/core/track.gd")
 const Sim := preload("res://scripts/core/sim.gd")
 const Skins := preload("res://scripts/game/skins.gd")
+const Props := preload("res://scripts/game/props.gd")
 
 const WORLDS := [
 	{  # Sky Islands
-		"tile_a": Color("d9a443"), "tile_b": Color("c08a32"), "edge": Color("f0c96a"), "crack": Color("8a5a2c"),
+		"tile_a": Color("efe3c8"), "tile_b": Color("d6c6a2"), "edge": Color("f2b93a"), "crack": Color("8a5a2c"),
 		"ramp": Color("ff7a1c"), "sky_top": Color("1257c4"), "sky_horizon": Color("7fbcf2"),
 		"ground": Color("5fa3e6"), "fog": 0.0016, "sun": Color("fff0cf"), "sun_energy": 0.95, "ambient": 0.3,
 		"accent": Color("e5484d"),
@@ -280,7 +281,7 @@ func _build_tiles() -> void:
 				drop -= 0.07
 			# With the stone shader plain slabs are only tinted; special ones are painted over.
 			var special: bool = ramp or finish or kind == Track.Cell.CRUMBLE
-			color.a = 0.95 if special else (0.5 if (c == first or c == last) else 0.32)
+			color.a = 0.95 if special else (0.9 if (c == first or c == last) else 0.32)
 			var xf := Transform3D(basis, track.to_world(row + 0.5, Track.d_of(c), drop))
 			_base[_inst[i]] = xf
 			_tiles.set_instance_transform(_inst[i], xf)
@@ -408,6 +409,9 @@ func _build_items() -> void:
 	torus.rings = 32
 	torus.ring_segments = 8
 	for cp in track.checkpoints:
+		if world < 2 and Props.has("temple_ruins"):
+			var gate := Props.make("temple_ruins", "Stone_Archway", 12.5, 0, Color.WHITE if world == 0 else Color(1.55, 1.02, 0.62))
+			_place(gate, cp, 0.0, -3.4)
 		var n := MeshInstance3D.new()
 		n.mesh = torus
 		n.material_override = _mat(Color("ffffff"), 0.3, 0.9)
@@ -417,7 +421,11 @@ func _build_items() -> void:
 
 	# Finish arch.
 	var arch := Node3D.new()
-	for side in [-1.0, 1.0]:
+	var grand: bool = world < 2 and Props.has("temple_ruins")
+	if grand:
+		arch.add_child(Props.make("temple_ruins", "Tall_Stone_Archway", 13.5, 0, Color.WHITE if world == 0 else Color(1.55, 1.02, 0.62)))
+		arch.get_child(0).position.y = -6.0
+	for side in ([] if grand else [-1.0, 1.0]):
 		var post := MeshInstance3D.new()
 		var pm := BoxMesh.new()
 		pm.size = Vector3(0.5, 5.0, 0.5)
@@ -429,8 +437,17 @@ func _build_items() -> void:
 	var bm2 := BoxMesh.new()
 	bm2.size = Vector3(7.7, 1.2, 0.3)
 	banner.mesh = bm2
-	banner.material_override = _mat(Color("ffd23f"), 0.5, 0.6)
-	banner.position.y = 4.6
+	var flag := Image.create(24, 4, false, Image.FORMAT_RGBA8)
+	for fy in 4:
+		for fx in 24:
+			flag.set_pixel(fx, fy, Color("f5f5f5") if (fx + fy) % 2 == 0 else Color("15181f"))
+	var flag_mat := StandardMaterial3D.new()
+	flag_mat.albedo_texture = ImageTexture.create_from_image(flag)
+	flag_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	flag_mat.uv1_scale = Vector3(3, 2, 1)
+	flag_mat.roughness = 0.7
+	banner.material_override = flag_mat
+	banner.position.y = 6.4 if grand else 4.6
 	arch.add_child(banner)
 	_place(arch, track.finish_s, 0.0, 0.0)
 	_confetti = CPUParticles3D.new()
@@ -484,48 +501,83 @@ func _window_texture(rng: RandomNumberGenerator, a: Color, b: Color) -> ImageTex
 				img.fill_rect(Rect2i(x, y, 2, 2), a if rng.randf() < 0.6 else b)
 	return ImageTexture.create_from_image(img)
 
+const KIT := "temple_ruins"
+const ROCKS_TALL := ["Tall_RockA", "Tall_RockB", "Tall_RockC", "Tall_RockD", "Tall_RockE", "Tall_RockF"]
+const ROCKS_SMALL := ["Small_RockA", "Small_RockB", "Small_RockC", "Small_RockD", "Small_RockE", "Small_RockF"]
+const TREES := ["TreeA", "TreeB", "TreeC", "TreeD"]
+const RUINS := ["Stone_Pillar", "Stone_Pillar_Broken", "Stone_Pillar_Very_Broken", "Stone_Decorative_Pillar",
+	"Stone_Decorative_Pillar_Broken", "Stone_Pillar_Tall_Broken", "Stone_Pillar", "Stone_Decorative_Pillar"]
+const DESERT_BITS := ["Pilar1_L", "Pilar2_L", "Pilar3_L_001", "Pilar4_L_001", "Pilar5_L_001"]
+const MOSS := Color(0.62, 1.25, 0.5)
+const SAND := Color(1.55, 1.02, 0.62)
+
+func _pick(rng: RandomNumberGenerator, list: Array) -> String:
+	return list[rng.randi() % list.size()]
+
+## Stands a model piece in [parent]; returns it so the caller can stretch or turn it further.
+func _stand(parent: Node3D, kit: String, piece: String, at: Vector3, target: float, axis: int = 1, tint: Color = Color.WHITE, turn: float = 0.0, skip: String = "") -> Node3D:
+	var n := Props.make(kit, piece, target, axis, tint, false, skip)
+	n.position = at
+	n.rotation.y = turn
+	parent.add_child(n)
+	return n
+
+## Road edges of a row in across-road metres: [left, right]; an empty row gives the full width.
+func _edges(row: int) -> Vector2:
+	var first := -1
+	var last := -1
+	for c in B.COLS:
+		if track.cell(row, c) != Track.Cell.NONE:
+			if first < 0:
+				first = c
+			last = c
+	if first < 0:
+		return Vector2(-B.COLS * 0.5, B.COLS * 0.5) * B.CELL
+	return Vector2(Track.d_of(first) - B.CELL * 0.5, Track.d_of(last) + B.CELL * 0.5)
+
+func _solid_span(from: int, to: int) -> bool:
+	for r in range(from, to + 1):
+		if r >= track.rows or track.row_empty(r):
+			return false
+	return true
+
+## A floating island: rock hanging below, a mossy cap, trees and what is left of a temple.
+func _island(n: Node3D, rng: RandomNumberGenerator, r: float) -> void:
+	var under := _stand(n, KIT, _pick(rng, ROCKS_TALL), Vector3(0, 0.2 * r, 0), r * 2.4, 1, Color.WHITE, rng.randf() * TAU)
+	under.rotation.x = PI
+	under.scale = Vector3(1.9, 1.0, 1.9)
+	var cap := _stand(n, KIT, _pick(rng, ROCKS_SMALL), Vector3(0, -0.12 * r, 0), r * 2.25, 0, MOSS, rng.randf() * TAU)
+	cap.scale = Vector3(1.0, 0.3, 1.0)
+	var top := 0.12 * r
+	for k in rng.randi_range(1, 3):
+		var a := rng.randf() * TAU
+		var at := Vector3(cos(a), 0, sin(a)) * rng.randf_range(0.1, 0.55) * r + Vector3(0, top, 0)
+		_stand(n, KIT, _pick(rng, TREES), at, rng.randf_range(5.0, 9.0), 1, Color.WHITE, rng.randf() * TAU)
+	for k in rng.randi_range(1, 3):
+		var a := rng.randf() * TAU
+		var at := Vector3(cos(a), 0, sin(a)) * rng.randf_range(0.2, 0.7) * r + Vector3(0, top, 0)
+		_stand(n, KIT, _pick(rng, RUINS), at, rng.randf_range(2.4, 5.5), 1, Color.WHITE, rng.randf() * TAU)
+	if r > 7.0 and rng.randf() < 0.6:
+		_stand(n, KIT, "Stone_Archway" if rng.randf() < 0.5 else "Stone_Archway_Broken", Vector3(0, top, 0), r * 0.7, 1, Color.WHITE, rng.randf() * TAU)
+
+func _glow(node: Node3D, energy: float) -> void:
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var src := (mi as MeshInstance3D).mesh.surface_get_material(0) as BaseMaterial3D
+		if src == null:
+			continue
+		var m := src.duplicate() as BaseMaterial3D
+		m.emission_enabled = true
+		m.emission_texture = m.albedo_texture
+		m.emission = Color.WHITE
+		m.emission_energy_multiplier = energy
+		(mi as MeshInstance3D).material_override = m
+
 func _build_scenery(world_index: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(track.id) + 17
-	var cone := CylinderMesh.new()
-	cone.top_radius = 1.0
-	cone.bottom_radius = 0.12
-	cone.height = 1.0
-	cone.radial_segments = 7
-	cone.rings = 1
-	var rock_mesh := _faceted(cone)
-	var disc := CylinderMesh.new()
-	disc.top_radius = 0.96
-	disc.bottom_radius = 1.04
-	disc.height = 1.0
-	disc.radial_segments = 7
-	disc.rings = 1
-	var cap_mesh := _faceted(disc)
-	var tree_top := CylinderMesh.new()
-	tree_top.top_radius = 0.0
-	tree_top.bottom_radius = 1.0
-	tree_top.height = 1.0
-	tree_top.radial_segments = 6
-	tree_top.rings = 1
-	var tree_mesh := _faceted(tree_top)
-	var puff := SphereMesh.new()
-	puff.radius = 1.0
-	puff.height = 1.5
-	puff.radial_segments = 8
-	puff.rings = 4
-	var puff_mesh := _faceted(puff)
+	Props.cutout(KIT)
+	Props.two_sided("neon_signs")
 	var cube := BoxMesh.new()
-
-	var rock := _mat(Color("6f5a4a"), 0.95)
-	var rock2 := _mat(Color("8a6f58"), 0.95)
-	var grass := _mat(Color("5cc24a"), 0.9)
-	var leaf := _mat(Color("2f9a4a"), 0.9)
-	var trunk := _mat(Color("6b4a2c"), 0.9)
-	var cloud := _mat(Color("ffffff"), 1.0, 0.18)
-	var sand_a := _mat(Color("c8743c"), 0.95)
-	var sand_b := _mat(Color("e09a58"), 0.95)
-	var sand_c := _mat(Color("9c5230"), 0.95)
-	var cactus := _mat(Color("3f8f4a"), 0.9)
 	var dark := StandardMaterial3D.new()
 	dark.albedo_color = Color("10152c")
 	dark.roughness = 0.5
@@ -542,84 +594,128 @@ func _build_scenery(world_index: int) -> void:
 			lit.append(m)
 	var neon_a := _mat(Color("22e6ff"), 0.4, 2.6)
 	var neon_b := _mat(Color("ff3df0"), 0.4, 2.6)
+	var signs: Array = Props.names("neon_signs")
 
+	# Things scattered to both sides of the road.
 	var row := 2
 	while row < track.rows:
 		for side in [-1.0, 1.0]:
-			if rng.randf() < 0.2:
+			if rng.randf() < 0.15:
 				continue
-			var off: float = side * rng.randf_range(13.0, 48.0)
 			var n := Node3D.new()
 			add_child(n)
-			n.position = track.to_world(row, off, 0.0)
 			n.rotation.y = rng.randf() * TAU
 			match world_index:
 				0:
-					var r := rng.randf_range(4.0, 9.5)
-					n.position.y += rng.randf_range(-15.0, -2.5)
-					_prop(n, rock_mesh, rock, Vector3(0, -r * 0.75, 0), Vector3(r, r * 1.5, r))
-					_prop(n, rock_mesh, rock2, Vector3(r * 0.3, -r * 0.4, r * 0.2), Vector3(r * 0.55, r * 0.8, r * 0.55))
-					_prop(n, cap_mesh, grass, Vector3(0, 0.25, 0), Vector3(r, 0.7, r))
-					for k in rng.randi_range(1, 4):
-						var tp := Vector3(rng.randf_range(-0.6, 0.6) * r, 0.6, rng.randf_range(-0.6, 0.6) * r)
-						var th := rng.randf_range(1.6, 3.2)
-						_prop(n, cap_mesh, trunk, tp + Vector3(0, th * 0.2, 0), Vector3(0.22, th * 0.5, 0.22))
-						_prop(n, tree_mesh, leaf, tp + Vector3(0, th * 0.75, 0), Vector3(th * 0.42, th, th * 0.42))
-						_prop(n, tree_mesh, grass, tp + Vector3(0, th * 1.15, 0), Vector3(th * 0.3, th * 0.7, th * 0.3))
-					if rng.randf() < 0.75:
-						var c := Vector3(rng.randf_range(-12, 12), rng.randf_range(-13, -5), rng.randf_range(-12, 12))
-						for k in rng.randi_range(3, 5):
-							var cr := rng.randf_range(2.5, 5.5)
-							_prop(n, puff_mesh, cloud, c + Vector3(rng.randf_range(-5, 5), rng.randf_range(-0.6, 0.6), rng.randf_range(-3, 3)), Vector3(cr, cr * 0.62, cr))
+					var r := rng.randf_range(4.5, 10.0)
+					n.position = track.to_world(row, side * (rng.randf_range(9.0, 40.0) + r), rng.randf_range(-11.0, 1.5))
+					_island(n, rng, r)
 				1:
-					# A mesa in bands of rock, like cut sandstone.
-					var r := rng.randf_range(4.5, 9.0)
-					n.position.y += rng.randf_range(2.0, 12.0)
-					var bands := rng.randi_range(4, 6)
-					var top := 0.0
-					for k in bands:
-						var bh := rng.randf_range(4.0, 9.0) if k < bands - 1 else 60.0
-						var grow := 1.0 + k * 0.13
-						_prop(n, cap_mesh, [sand_b, sand_a, sand_c][k % 3], Vector3(0, top - bh * 0.5, 0), Vector3(r * grow, bh, r * grow))
-						top -= bh
-					if rng.randf() < 0.5:
-						var cp := Vector3(rng.randf_range(-0.5, 0.5) * r, 2.0, rng.randf_range(-0.5, 0.5) * r)
-						_prop(n, cap_mesh, cactus, cp, Vector3(0.4, 3.0, 0.4))
-						_prop(n, cap_mesh, cactus, cp + Vector3(0.8, 0.4, 0), Vector3(0.28, 1.4, 0.28))
+					# A mesa: a tower of sandstone rising from the canyon floor, ruins on the nearer ones.
+					var h := rng.randf_range(42.0, 78.0)
+					var off: float = rng.randf_range(15.0, 55.0)
+					var top := rng.randf_range(-6.0, 9.0)
+					n.position = track.to_world(row, side * off, top - h)
+					var rock := _stand(n, KIT, _pick(rng, ROCKS_TALL), Vector3.ZERO, h, 1, SAND)
+					rock.scale = Vector3(1.0, 1.0, 1.0) * rng.randf_range(1.0, 1.5)
+					rock.scale.y = 1.0
+					if off < 34.0 and top < 4.0:
+						for k in rng.randi_range(1, 3):
+							var a := rng.randf() * TAU
+							_stand(n, "desert_ruins", _pick(rng, DESERT_BITS), Vector3(cos(a) * 2.2, h - 1.2, sin(a) * 2.2), rng.randf_range(3.5, 7.0), 1, Color.WHITE, rng.randf() * TAU)
 				_:
 					var h2 := rng.randf_range(34.0, 95.0)
 					var w := rng.randf_range(5.0, 9.5)
-					n.position.y += rng.randf_range(2.0, 22.0) - h2 * 0.5
+					n.position = track.to_world(row, side * rng.randf_range(16.0, 46.0), rng.randf_range(2.0, 22.0) - h2 * 0.5)
 					n.rotation.y = track.yaw_at(row) + (0.0 if rng.randf() < 0.5 else PI * 0.5)
 					_prop(n, cube, lit[rng.randi() % lit.size()], Vector3.ZERO, Vector3(w, h2, w))
 					_prop(n, cube, dark, Vector3(0, h2 * 0.5 + 0.6, 0), Vector3(w * 0.7, 1.2, w * 0.7))
 					_prop(n, cube, neon_a if rng.randf() < 0.5 else neon_b, Vector3(0, h2 * 0.5 + 0.05, 0), Vector3(w + 0.25, 0.3, w + 0.25))
-					if rng.randf() < 0.5:
-						_prop(n, cube, neon_b if rng.randf() < 0.5 else neon_a, Vector3(0, h2 * 0.5 + 5.0, 0), Vector3(0.18, 9.0, 0.18))
-		row += rng.randi_range(8, 14)
+		row += rng.randi_range(9, 15)
 
-	# Under the road: something for it to rest on, so it does not look like a strip of paper.
-	var keel_mat := rock if world_index == 0 else (sand_c if world_index == 1 else dark)
+	# Landmarks stand ahead of the player, near the line of sight: a phone held upright sees
+	# little to the sides. The last one waits beyond the finish.
+	var marks := 0
+	var mrow := 70
+	var last := false
+	while not last and marks < 4:
+		last = mrow >= track.rows
+		var side := 1.0 if marks % 2 == 0 else -1.0
+		var at_row: float = minf(mrow, track.rows - 1)
+		var beyond: Vector3 = Track.forward(track.yaw_at(at_row)) * (60.0 if last else 0.0)
+		var face: float = track.yaw_at(at_row)
+		match world_index:
+			0:
+				_stand(self, "floating_castle", "*", track.to_world(at_row, side * 44.0, -14.0) + beyond, 64.0, 0, Color.WHITE, face + side * 0.9, "Cloud|Outside")
+				var sea := _stand(self, "floating_castle", "CloudsFlat_003", track.to_world(at_row, 0.0, -34.0), 300.0, 0)
+				sea.scale = Vector3(1.0, 0.28, 1.0)
+			1:
+				_stand(self, "desert_ruins", "*", track.to_world(at_row, side * 34.0, -15.0) + beyond, 44.0, 0, Color.WHITE, face + side * 0.6)
+			_:
+				_stand(self, "cyber_city", "*", track.to_world(at_row, side * 95.0, -26.0) + beyond, 150.0, 0, Color.WHITE, face + marks * 1.57)
+		marks += 1
+		mrow += 130
+
+	# Beside the road: pillars rising out of the deep with a light on top (signs in the city).
+	var prow := 6
+	var flip := false
+	while prow < track.rows - 4:
+		if _solid_span(prow, prow + 1):
+			var e := _edges(prow)
+			for side in [-1.0, 1.0]:
+				var d: float = (e.x - 0.95) if side < 0.0 else (e.y + 0.95)
+				var yaw: float = track.yaw_at(prow)
+				if world_index == 2:
+					if flip == (side > 0.0) and not signs.is_empty():
+						var pole := Node3D.new()
+						add_child(pole)
+						pole.position = track.to_world(prow, d + side * 1.2, 0.0)
+						pole.rotation.y = yaw
+						_prop(pole, cube, dark, Vector3(0, -6.0, 0), Vector3(0.25, 22.0, 0.25))
+						_stand(pole, "neon_signs", _pick(rng, signs), Vector3(0, 2.2, 0), 2.1, 0)
+				else:
+					var tint: Color = Color.WHITE if world_index == 0 else SAND
+					var post := _stand(self, KIT, "Stone_Pillar_Tall", track.to_world(prow, d, -17.7), 18.0, 1, tint, yaw)
+					post.scale = Vector3(0.5, 1.0, 0.5)
+					if flip == (side > 0.0):
+						var gem := _stand(self, "crystal", "*", track.to_world(prow, d, 0.3), 1.1, 1, Color.WHITE, rng.randf() * TAU)
+						_glow(gem, 0.75)
+		prow += 11
+		flip = not flip
+
+	# Under the road: arches of a bridge, so it rests on something.
 	var r2 := 3
 	while r2 < track.rows - 2:
-		if not track.row_empty(r2) and not track.row_empty(r2 + 1):
+		if _solid_span(r2, r2 + 5):
+			var e := _edges(r2 + 2)
 			var k := Node3D.new()
 			add_child(k)
-			k.position = track.to_world(r2 + 0.5, 0.0, -TILE_DEPTH)
-			k.rotation.y = track.yaw_at(r2 + 0.5)
-			var wide := 0.0
-			for c in B.COLS:
-				if track.cell(r2, c) != Track.Cell.NONE:
-					wide += 1.0
-			if world_index == 1:
-				_prop(k, cap_mesh, keel_mat, Vector3(0, -30.0, 0), Vector3(wide * 0.3, 60.0, wide * 0.3))
-			elif world_index == 0:
-				_prop(k, rock_mesh, keel_mat, Vector3(0, -2.2, 0), Vector3(wide * 0.5, 4.4, 2.6))
-			else:
+			k.position = track.to_world(r2 + 3.0, (e.x + e.y) * 0.5, -TILE_DEPTH + 0.02)
+			k.rotation.y = track.yaw_at(r2 + 3.0)
+			if world_index == 2:
+				var wide: float = e.y - e.x
 				_prop(k, cube, dark, Vector3(0, -0.5, 0), Vector3(wide * 0.6, 1.0, 6.0))
 				_prop(k, cube, neon_a, Vector3(0, -1.05, 0), Vector3(wide * 0.62, 0.12, 6.0))
+			else:
+				var s := Props.size(KIT, "Stone_Bridge_Arch")
+				var arch := Props.make(KIT, "Stone_Bridge_Arch", 1.0, 1, Color.WHITE if world_index == 0 else SAND)
+				# Modelled lengthwise along x: turn it along the road, then fit it to this stretch.
+				arch.rotation.y = PI * 0.5
+				arch.scale = Vector3(6.3 / (s.x / s.y), 7.5, (e.y - e.x + 0.5) / (s.z / s.y))
+				arch.position.y = -7.5
+				k.add_child(arch)
 			_keels.append([r2, k])
 		r2 += 6
+
+	if world_index == 1:
+		# The canyon floor, far below.
+		var floor := MeshInstance3D.new()
+		var pm := PlaneMesh.new()
+		pm.size = Vector2(3000, 3000)
+		floor.mesh = pm
+		floor.material_override = _mat(Color("b8683a"), 1.0)
+		floor.position = track.to_world(track.rows * 0.5, 0.0, 0.0) + Vector3(0, -62.0, 0)
+		add_child(floor)
 
 func _build_ball(skin: String) -> void:
 	ball = Skins.build(skin)

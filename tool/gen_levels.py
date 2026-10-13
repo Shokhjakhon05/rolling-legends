@@ -5,6 +5,7 @@ The table is the source of truth for level design; the JSON files are what the g
 After editing run:  python3 tool/gen_levels.py && godot --headless -s tests/run_tests.gd
 (the tests play every level with a bot and fail if one cannot be finished).
 """
+import copy
 import json
 import os
 
@@ -75,7 +76,7 @@ def boost(s, d=0.0): return {'t': 'boost', 's': s, 'd': d}
 
 SKY, DESERT, NEON = 'sky_islands', 'desert_canyon', 'neon_nights'
 
-# (world, par seconds or 0, pieces). Names live in the translation tables: level_<n>.
+# (world, par seconds or 0, pieces): the hand-made stretches campaign() builds missions from.
 LEVELS = [
     # ---- World 1: Sky Islands - learn to steer ------------------------------------------
     (SKY, 0, [S(30, 7), S(40, 7, items=[cr(8, 0, 3, 4)]), S(30, 7)]),
@@ -170,11 +171,59 @@ LEVELS = [
 ]
 
 
+PER_WORLD = 15
+
+
+def mirrored(pieces):
+    """The same stretch of road, left and right swapped."""
+    out = copy.deepcopy(pieces)
+    for p in out:
+        if 'angle' in p: p['angle'] = -p['angle']
+        if p['t'] == 'hole': p['from'], p['to'] = 6 - p['to'], 6 - p['from']
+        if 'cols' in p: p['cols'] = sorted(6 - c for c in p['cols'])
+        for i in p.get('items', []):
+            if 'd' in i: i['d'] = -i['d']
+            if 'dd' in i: i['dd'] = -i['dd']
+    return out
+
+
+def turning(pieces):
+    return sum(p.get('angle', 0) for p in pieces)
+
+
+def campaign():
+    """A mission is two to four of the hand-made stretches above run together, each new
+    stretch opening with a checkpoint. Stretches are mirrored whenever that keeps the road
+    from curling back on itself."""
+    out = []
+    for w, world in enumerate([SKY, DESERT, NEON]):
+        base = [lv for lv in LEVELS if lv[0] == world]
+        for i in range(PER_WORLD):
+            if i < len(base):
+                picks = [i] + [k for k in (i - 1, i - 3) if k >= 0]
+                if i == 0: picks = [0, 1]
+                if i == 1: picks = [1, 2]
+            else:
+                j = i - len(base)
+                picks = [4 + j, 9 - j, 2 + j, 8 - j]
+            pieces, heading = [], 0
+            for n, k in enumerate(picks):
+                part = copy.deepcopy(base[k][2])
+                if n > 0:
+                    if abs(heading + turning(part)) > abs(heading - turning(part)) or (turning(part) == 0 and n % 2 == 1):
+                        part = mirrored(part)
+                    part[0].setdefault('items', []).insert(0, cp(3))
+                heading += turning(part)
+                pieces += part
+            out.append((world, 0, pieces))
+    return out
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     index = []
     counts = {}
-    for n, (world, par, pieces) in enumerate(LEVELS, 1):
+    for n, (world, par, pieces) in enumerate(campaign(), 1):
         counts[world] = counts.get(world, 0) + 1
         w = [SKY, DESERT, NEON].index(world) + 1
         folder = 'world_%02d' % w

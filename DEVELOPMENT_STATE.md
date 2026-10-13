@@ -46,3 +46,17 @@ Next exact actions:
 
 Do not replace the engine mid-milestone. Do not add an online backend. Do not commit ad ids,
 keystores or passwords.
+
+## 0.4.0 (2026-10-13) - hand-made models, long missions
+
+- Scenery is no longer built from primitives: `scripts/game/props.gd` cuts downloaded models
+  (Sketchfab, CC BY 4.0, listed in `assets/models/world/CREDITS.md` and on the settings screen) into
+  pieces that `level_view.gd` stands along the road: floating castle, temple ruins and trees, crystal
+  clusters, desert ruins, a neon city and signs. Source files and the slimming script live outside the
+  repo in `~/rolling-legends-art` (`tools/prep.mjs`, glTF-Transform).
+- The road uses `assets/road.gdshader` (real stone in world space, a joint cut around every cell).
+- 45 missions (15 per world): `tool/gen_levels.py: campaign()` runs two to four hand-made stretches
+  together, mirroring them so the road does not curl back; a test checks it never crosses itself.
+- Three model balls: titan, robo, planet.
+- Not verified: frame rate on a phone with the new models (about 250k triangles in the heaviest
+  views), ads on a device. `tool/dev/shots.sh` renders check frames on the desktop.

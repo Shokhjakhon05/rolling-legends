@@ -1,0 +1,373 @@
+{
+ "schemaVersion": 1,
+ "id": "world_02_level_027",
+ "number": 27,
+ "world": "desert_canyon",
+ "stars": {
+  "crystals": 20,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "islands",
+   "count": 3,
+   "plat": 7,
+   "gap": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 4,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 24,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 10,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 35,
+   "len": 24
+  },
+  {
+   "t": "islands",
+   "count": 3,
+   "plat": 6,
+   "gap": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 4,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 13,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 22,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 12,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "gap",
+   "len": 3
+  },
+  {
+   "t": "straight",
+   "len": 10,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -50,
+   "len": 34,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 8
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 8,
+     "amp": 2.0,
+     "period": 2.2,
+     "phase": 0.0,
+     "r": 0.8
+    },
+    {
+     "t": "pendulum",
+     "s": 16,
+     "amp": 2.0,
+     "period": 2.2,
+     "phase": 0.5,
+     "r": 0.8
+    },
+    {
+     "t": "crystal",
+     "s": 12,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "gate",
+     "s": 10,
+     "period": 3.0,
+     "open": 1.7,
+     "phase": 0.0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "gate",
+     "s": 10,
+     "period": 2.8,
+     "open": 1.6,
+     "phase": 0.3
+    },
+    {
+     "t": "checkpoint",
+     "s": 16
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 45,
+   "len": 30,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "items": [
+    {
+     "t": "gate",
+     "s": 8,
+     "period": 3.0,
+     "open": 1.7,
+     "phase": 0.0
+    },
+    {
+     "t": "gate",
+     "s": 20,
+     "period": 3.0,
+     "open": 1.7,
+     "phase": 0.5
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 13,
+     "amp": 1.6,
+     "period": 2.6,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -40,
+   "len": 28,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 6
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 9,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "pendulum",
+     "s": 19,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.5,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

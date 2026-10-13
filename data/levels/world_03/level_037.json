@@ -1,0 +1,348 @@
+{
+ "schemaVersion": 1,
+ "id": "world_03_level_037",
+ "number": 37,
+ "world": "neon_nights",
+ "stars": {
+  "crystals": 19,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "crumble",
+   "len": 24,
+   "cols": [
+    1,
+    2,
+    3
+   ],
+   "at": 3,
+   "rows": 18,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    },
+    {
+     "t": "barrier",
+     "s": 11,
+     "d": 1.5,
+     "w": 2
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 45,
+   "len": 30,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 6
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 26,
+   "cols": [
+    3,
+    4,
+    5
+   ],
+   "at": 3,
+   "rows": 20,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": -2,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    },
+    {
+     "t": "barrier",
+     "s": 11,
+     "d": -1.5,
+     "w": 2
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 26,
+   "cols": [
+    1,
+    2
+   ],
+   "at": 3,
+   "rows": 20,
+   "alt": 6,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 2,
+     "step": 3
+    },
+    {
+     "t": "crystal",
+     "s": 12,
+     "d": -2,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 24,
+   "cols": [
+    4,
+    5
+   ],
+   "at": 3,
+   "rows": 18,
+   "alt": 7,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": -2,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    },
+    {
+     "t": "barrier",
+     "s": 11,
+     "d": 1.5,
+     "w": 2
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 26,
+   "cols": [
+    1,
+    2
+   ],
+   "at": 3,
+   "rows": 20,
+   "alt": 7,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 10,
+     "amp": 2.0,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.8
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 22,
+   "cols": [
+    1,
+    5
+   ],
+   "at": 3,
+   "rows": 16,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 0,
+     "n": 4,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "boost",
+     "s": 4,
+     "d": 0.0
+    },
+    {
+     "t": "gate",
+     "s": 14,
+     "period": 2.4,
+     "open": 1.4,
+     "phase": 0.0
+    },
+    {
+     "t": "crystal",
+     "s": 18,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "gate",
+     "s": 8,
+     "period": 2.0,
+     "open": 1.2,
+     "phase": 0.0
+    },
+    {
+     "t": "pendulum",
+     "s": 16,
+     "amp": 2.0,
+     "period": 2.0,
+     "phase": 0.0,
+     "r": 0.8
+    },
+    {
+     "t": "crystal",
+     "s": 12,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -40,
+   "len": 28,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 6
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "gate",
+     "s": 8,
+     "period": 2.0,
+     "open": 1.2,
+     "phase": 0.3
+    },
+    {
+     "t": "gate",
+     "s": 17,
+     "period": 2.0,
+     "open": 1.2,
+     "phase": 0.8
+    },
+    {
+     "t": "crystal",
+     "s": 12,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

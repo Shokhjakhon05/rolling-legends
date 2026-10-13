@@ -13,6 +13,16 @@ const INFO := {
 	"lava": {"a": Color("2a1410"), "b": Color("ff7a1a"), "metal": 0.1, "rough": 0.8, "glow": 2.0},
 	"retro_pixel": {"a": Color("3b2e7e"), "b": Color("ffd23f"), "metal": 0.0, "rough": 0.9, "glow": 0.0},
 	"storm": {"a": Color("08090f"), "b": Color("38e8ff"), "metal": 0.7, "rough": 0.07, "glow": 1.1},
+	"titan": {"a": Color("d8d8d2"), "b": Color("7fe0d8"), "metal": 0.4, "rough": 0.5, "glow": 0.0},
+	"robo": {"a": Color("8a8f98"), "b": Color("ff8a2a"), "metal": 0.6, "rough": 0.4, "glow": 0.5},
+	"planet": {"a": Color("3aa0e8"), "b": Color("ffb0c8"), "metal": 0.0, "rough": 0.7, "glow": 0.0},
+}
+
+## Skins that are whole hand-made models (credits: assets/models/world/CREDITS.md).
+const MODELS := {
+	"titan": "res://assets/models/balls/ball_panel.glb",
+	"robo": "res://assets/models/balls/ball_robot.glb",
+	"planet": "res://assets/models/balls/ball_planet.glb",
 }
 
 static var _cache := {}
@@ -186,6 +196,36 @@ static func _hero() -> Node3D:
 	return holder
 
 ## Mirror-dark metal only shows the bright sky; keep the model's colours as its author saw them.
+## A downloaded model centred on itself and brought to the game's radius.
+static func _model(path: String) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var model: Node3D = (load(path) as PackedScene).instantiate()
+	var box := AABB()
+	var first := true
+	for n in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		var xf := mi.transform
+		var up := mi.get_parent()
+		while up != model and up is Node3D:
+			xf = (up as Node3D).transform * xf
+			up = up.get_parent()
+		xf = model.transform * xf
+		var b: AABB = xf * mi.mesh.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	if first:
+		model.queue_free()
+		return null
+	var holder := Node3D.new()
+	# Fit by the middle extent: an antenna or a foot must not shrink the whole ball.
+	var dims := [box.size.x, box.size.y, box.size.z]
+	dims.sort()
+	var k: float = R * 2.0 / maxf(dims[1], 0.0001)
+	model.transform = Transform3D(Basis.from_scale(Vector3.ONE * k), -box.get_center() * k) * model.transform
+	holder.add_child(model)
+	return holder
+
 static func _tame(mesh: MeshInstance3D) -> void:
 	for i in mesh.mesh.get_surface_count():
 		var src := mesh.mesh.surface_get_material(i)
@@ -204,6 +244,11 @@ static func _tame(mesh: MeshInstance3D) -> void:
 ## The whole ball as a node; rotate it and everything rolls together.
 static func build(id: String) -> Node3D:
 	var root := Node3D.new()
+	if MODELS.has(id):
+		var made := _model(MODELS[id])
+		if made != null:
+			root.add_child(made)
+			return root
 	if id == "legend":
 		var hero := _hero()
 		if hero != null:

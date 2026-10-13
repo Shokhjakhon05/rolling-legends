@@ -4,7 +4,7 @@
  "number": 4,
  "world": "sky_islands",
  "stars": {
-  "crystals": 6,
+  "crystals": 15,
   "par": 0
  },
  "pieces": [
@@ -71,6 +71,91 @@
   {
    "t": "straight",
    "len": 22
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -40,
+   "len": 30,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 10,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 22
+  },
+  {
+   "t": "turn",
+   "angle": 40,
+   "len": 30,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 10,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 30,
+   "width": 7,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 40,
+   "width": 7,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 30,
+   "width": 7
   }
  ]
 }

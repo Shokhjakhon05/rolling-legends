@@ -10,7 +10,7 @@ const LevelDb := preload("res://scripts/core/level_db.gd")
 
 var failures := 0
 var checks := 0
-const EXPECTED_CHECKS := 200   # raise when adding checks; a lower count means a test died
+const EXPECTED_CHECKS := 300   # raise when adding checks; a lower count means a test died
 
 func check(ok: bool, what: String) -> void:
 	checks += 1
@@ -106,7 +106,7 @@ func test_core() -> void:
 
 func test_levels() -> void:
 	print("levels: %d" % LevelDb.count())
-	check(LevelDb.count() == 30, "the campaign has 30 levels")
+	check(LevelDb.count() == 45, "the campaign has 45 levels")
 	for i in LevelDb.count():
 		var t: RefCounted = LevelDb.track(i)
 		var name := "level %d" % (i + 1)
@@ -121,6 +121,13 @@ func test_levels() -> void:
 					if t.cell(r, col) != Track.Cell.SOLID:
 						safe = false
 			check(safe, "%s: checkpoint at %.0f is not on safe ground" % [name, cp])
+		# The road never comes back over itself: scenery and the camera rely on that.
+		var clear := true
+		for a in range(0, t.rows, 3):
+			for b in range(a + 36, t.rows, 3):
+				if t.pos[a].distance_squared_to(t.pos[b]) < 144.0:
+					clear = false
+		check(clear, "%s: the road crosses itself" % name)
 		# Passable without a single fall, with the plain ball.
 		var clean: RefCounted = Bot.play(t, 0.0)
 		var greedy: RefCounted = Bot.play(t, 1.0, 3)

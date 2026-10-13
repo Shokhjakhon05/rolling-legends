@@ -1,0 +1,308 @@
+{
+ "schemaVersion": 1,
+ "id": "world_02_level_023",
+ "number": 23,
+ "world": "desert_canyon",
+ "stars": {
+  "crystals": 24,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 24
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 13,
+     "amp": 1.6,
+     "period": 2.6,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 40,
+   "len": 28,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 6
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "pendulum",
+     "s": 9,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.0,
+     "r": 0.45
+    },
+    {
+     "t": "pendulum",
+     "s": 19,
+     "amp": 1.6,
+     "period": 2.4,
+     "phase": 0.5,
+     "r": 0.45
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "islands",
+   "count": 4,
+   "plat": 6,
+   "gap": 4,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 15,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 25,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 35,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 10,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "islands",
+   "count": 3,
+   "plat": 5,
+   "gap": 4,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 5,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": 0
+    },
+    {
+     "t": "crystal",
+     "s": 23,
+     "d": 0
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 22,
+   "cols": [
+    1,
+    2
+   ],
+   "at": 3,
+   "rows": 16,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 4,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12
+  },
+  {
+   "t": "crumble",
+   "len": 22,
+   "cols": [
+    4,
+    5
+   ],
+   "at": 3,
+   "rows": 16,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": -2,
+     "n": 4,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 12,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "crumble",
+   "len": 30,
+   "cols": [
+    1,
+    2
+   ],
+   "at": 3,
+   "rows": 24,
+   "alt": 8,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 2,
+     "n": 2,
+     "step": 3
+    },
+    {
+     "t": "crystal",
+     "s": 14,
+     "d": -2,
+     "n": 2,
+     "step": 3
+    },
+    {
+     "t": "crystal",
+     "s": 22,
+     "d": 2,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 14
+  },
+  {
+   "t": "crumble",
+   "len": 20,
+   "cols": [
+    1,
+    5
+   ],
+   "at": 3,
+   "rows": 14,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 0,
+     "n": 4,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  }
+ ]
+}

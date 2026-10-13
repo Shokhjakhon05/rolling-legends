@@ -1,0 +1,365 @@
+{
+ "schemaVersion": 1,
+ "id": "world_01_level_015",
+ "number": 15,
+ "world": "sky_islands",
+ "stars": {
+  "crystals": 29,
+  "par": 0
+ },
+ "pieces": [
+  {
+   "t": "straight",
+   "len": 22
+  },
+  {
+   "t": "turn",
+   "angle": 55,
+   "len": 34,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 2,
+     "n": 5,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -55,
+   "len": 34,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": -2,
+     "n": 5,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 14,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -40,
+   "len": 26,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": -2,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 40,
+   "len": 26,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 2,
+     "n": 3,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 26,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 0,
+     "n": 4,
+     "step": 4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 16
+  },
+  {
+   "t": "straight",
+   "len": 22,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 6,
+     "d": 0,
+     "n": 3,
+     "step": 5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 14,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 30,
+   "len": 24,
+   "width": 3,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 2,
+     "step": 6
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "items": [
+    {
+     "t": "barrier",
+     "s": 8,
+     "d": -1.5,
+     "w": 2
+    },
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 1.5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "items": [
+    {
+     "t": "barrier",
+     "s": 8,
+     "d": 1.5,
+     "w": 2
+    },
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": -1.5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "items": [
+    {
+     "t": "barrier",
+     "s": 8,
+     "d": 0,
+     "w": 2
+    },
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 2
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 14,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": -35,
+   "len": 26,
+   "items": [
+    {
+     "t": "barrier",
+     "s": 13,
+     "d": 1.5,
+     "w": 2
+    },
+    {
+     "t": "crystal",
+     "s": 13,
+     "d": -1.5
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 18,
+   "items": [
+    {
+     "t": "barrier",
+     "s": 8,
+     "d": -1.5,
+     "w": 2
+    },
+    {
+     "t": "barrier",
+     "s": 14,
+     "d": 1.5,
+     "w": 2
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 14,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 4,
+     "d": 0,
+     "n": 2,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 24,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 3
+    },
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "gap",
+   "len": 3
+  },
+  {
+   "t": "straight",
+   "len": 20,
+   "items": [
+    {
+     "t": "checkpoint",
+     "s": 4
+    }
+   ]
+  },
+  {
+   "t": "turn",
+   "angle": 35,
+   "len": 26,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 8,
+     "d": 0,
+     "n": 3,
+     "step": 3
+    }
+   ]
+  },
+  {
+   "t": "hole",
+   "len": 18,
+   "from": 1,
+   "to": 3,
+   "at": 4,
+   "rows": 8
+  },
+  {
+   "t": "straight",
+   "len": 14
+  },
+  {
+   "t": "gap",
+   "len": 4,
+   "items": [
+    {
+     "t": "crystal",
+     "s": 0.3,
+     "d": 0,
+     "n": 3,
+     "step": 1.3,
+     "arc": 1.4
+    }
+   ]
+  },
+  {
+   "t": "straight",
+   "len": 20
+  }
+ ]
+}

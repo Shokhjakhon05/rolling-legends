@@ -18,6 +18,10 @@ static func all() -> Array[Dictionary]:
 			_cache.append(data)
 	return _cache
 
+## Levels in each world (the campaign is split evenly).
+static func per_world() -> int:
+	return maxi(count() / WORLDS.size(), 1)
+
 static func count() -> int:
 	return all().size()
 
